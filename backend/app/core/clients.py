@@ -1,0 +1,266 @@
+"""Centralized external service clients and connection pool management.
+
+Follows the singleton connection pooling pattern for:
+- PostgreSQL / SQLite (SQLAlchemy 2.0 Async Engine & Sessionmaker)
+- Qdrant Vector Database (AsyncQdrantClient)
+- FastEmbed (Text Embedding Model Engine)
+- Ollama Local Daemon (HTTPX Async Client with pooling and keep-alive)
+- Anthropic Claude & OpenAI API (HTTPX Async Clients with connection pooling)
+"""
+
+import logging
+from typing import Any
+import httpx
+from qdrant_client import AsyncQdrantClient
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from app.core.config import Settings, get_settings
+from app.core.database import get_engine_args
+
+logger = logging.getLogger(__name__)
+
+# Global client / pool singletons
+_async_engine: AsyncEngine | None = None
+_async_session_factory: async_sessionmaker[AsyncSession] | None = None
+_qdrant_client: AsyncQdrantClient | None = None
+_ollama_client: httpx.AsyncClient | None = None
+_anthropic_client: httpx.AsyncClient | None = None
+_openai_client: httpx.AsyncClient | None = None
+_fastembed_model: Any | None = None
+
+
+# ==========================================
+# 1. Database (PostgreSQL / SQLite) Engine & Factory
+# ==========================================
+def get_async_engine(settings: Settings | None = None) -> AsyncEngine:
+    """Return or lazily create the SQLAlchemy 2.0 AsyncEngine singleton."""
+    global _async_engine
+    if _async_engine is None:
+        cfg = settings or get_settings()
+        engine_args = get_engine_args(cfg)
+        logger.info(f"Initializing AsyncEngine for database dialect: {'SQLite' if cfg.is_sqlite else 'PostgreSQL'}")
+        _async_engine = create_async_engine(cfg.DATABASE_URL, **engine_args)
+    return _async_engine
+
+
+def get_session_factory(settings: Settings | None = None) -> async_sessionmaker[AsyncSession]:
+    """Return or lazily create the async sessionmaker factory."""
+    global _async_session_factory
+    if _async_session_factory is None:
+        engine_instance = get_async_engine(settings)
+        _async_session_factory = async_sessionmaker(
+            bind=engine_instance,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+            autocommit=False,
+        )
+    return _async_session_factory
+
+
+async def close_database_engine() -> None:
+    """Dispose of the database engine connection pool."""
+    global _async_engine, _async_session_factory
+    if _async_engine is not None:
+        logger.info("Closing database engine connection pool...")
+        try:
+            await _async_engine.dispose()
+        finally:
+            _async_engine = None
+            _async_session_factory = None
+        logger.info("Database engine closed.")
+
+
+# ==========================================
+# 2. Qdrant Vector Database Client (Async)
+# ==========================================
+def get_qdrant_client(settings: Settings | None = None) -> AsyncQdrantClient:
+    """Return or lazily create the asynchronous Qdrant client singleton."""
+    global _qdrant_client
+    if _qdrant_client is None:
+        cfg = settings or get_settings()
+        logger.info(f"Initializing AsyncQdrantClient for URL: {cfg.QDRANT_URL}")
+        _qdrant_client = AsyncQdrantClient(
+            url=cfg.QDRANT_URL,
+            api_key=cfg.QDRANT_API_KEY,
+            timeout=10.0,
+            check_compatibility=False,
+        )
+    return _qdrant_client
+
+
+async def close_qdrant_client() -> None:
+    """Close Qdrant client connection."""
+    global _qdrant_client
+    if _qdrant_client is not None:
+        logger.info("Closing AsyncQdrantClient connection...")
+        try:
+            await _qdrant_client.close()
+        finally:
+            _qdrant_client = None
+
+
+# ==========================================
+# 3. FastEmbed Embedding Model Client
+# ==========================================
+def get_embedding_model(
+    model_name: str = "BAAI/bge-small-en-v1.5",
+) -> Any:
+    """Return or lazily initialize the FastEmbed TextEmbedding model singleton."""
+    global _fastembed_model
+    if _fastembed_model is None:
+        from fastembed import TextEmbedding
+
+        logger.info(f"Initializing FastEmbed model: {model_name}")
+        _fastembed_model = TextEmbedding(model_name=model_name)
+    return _fastembed_model
+
+
+# ==========================================
+# 4. Ollama Local Daemon Client
+# ==========================================
+def get_ollama_client(settings: Settings | None = None) -> httpx.AsyncClient:
+    """Return or lazily create the HTTPX AsyncClient for Ollama local daemon."""
+    global _ollama_client
+    if _ollama_client is None or _ollama_client.is_closed:
+        cfg = settings or get_settings()
+        logger.info(f"Initializing Ollama AsyncClient (base_url={cfg.OLLAMA_BASE_URL})...")
+        limits = httpx.Limits(max_keepalive_connections=20, max_connections=50)
+        _ollama_client = httpx.AsyncClient(
+            base_url=cfg.OLLAMA_BASE_URL,
+            timeout=httpx.Timeout(connect=2.0, read=120.0, write=10.0, pool=5.0),
+            limits=limits,
+        )
+    return _ollama_client
+
+
+async def close_ollama_client() -> None:
+    """Close Ollama AsyncClient."""
+    global _ollama_client
+    if _ollama_client is not None:
+        logger.info("Closing Ollama AsyncClient...")
+        try:
+            if not _ollama_client.is_closed:
+                await _ollama_client.aclose()
+        finally:
+            _ollama_client = None
+
+
+# ==========================================
+# 5. Cloud LLM Clients (Anthropic & OpenAI)
+# ==========================================
+def get_anthropic_client(settings: Settings | None = None) -> httpx.AsyncClient:
+    """Return or lazily create the HTTPX AsyncClient for Anthropic API."""
+    global _anthropic_client
+    if _anthropic_client is None or _anthropic_client.is_closed:
+        cfg = settings or get_settings()
+        headers = {
+            "anthropic-version": "2023-06-01",
+            "content-type": "application/json",
+        }
+        if cfg.ANTHROPIC_API_KEY:
+            headers["x-api-key"] = cfg.ANTHROPIC_API_KEY
+
+        limits = httpx.Limits(max_keepalive_connections=10, max_connections=30)
+        _anthropic_client = httpx.AsyncClient(
+            base_url="https://api.anthropic.com/v1",
+            headers=headers,
+            timeout=httpx.Timeout(connect=5.0, read=180.0, write=10.0, pool=5.0),
+            limits=limits,
+        )
+    return _anthropic_client
+
+
+def get_openai_client(settings: Settings | None = None) -> httpx.AsyncClient:
+    """Return or lazily create the HTTPX AsyncClient for OpenAI API."""
+    global _openai_client
+    if _openai_client is None or _openai_client.is_closed:
+        cfg = settings or get_settings()
+        headers = {
+            "content-type": "application/json",
+        }
+        if cfg.OPENAI_API_KEY:
+            headers["authorization"] = f"Bearer {cfg.OPENAI_API_KEY}"
+
+        limits = httpx.Limits(max_keepalive_connections=10, max_connections=30)
+        _openai_client = httpx.AsyncClient(
+            base_url="https://api.openai.com/v1",
+            headers=headers,
+            timeout=httpx.Timeout(connect=5.0, read=180.0, write=10.0, pool=5.0),
+            limits=limits,
+        )
+    return _openai_client
+
+
+async def close_cloud_llm_clients() -> None:
+    """Close Anthropic and OpenAI HTTP clients."""
+    global _anthropic_client, _openai_client
+    if _anthropic_client is not None:
+        try:
+            if not _anthropic_client.is_closed:
+                await _anthropic_client.aclose()
+        finally:
+            _anthropic_client = None
+    if _openai_client is not None:
+        try:
+            if not _openai_client.is_closed:
+                await _openai_client.aclose()
+        finally:
+            _openai_client = None
+
+
+# ==========================================
+# 6. Global Lifecycle Management (Startup / Shutdown)
+# ==========================================
+async def init_all_clients(settings: Settings | None = None, create_tables: bool = True) -> None:
+    """Eagerly initialize all client singletons and database schema on startup."""
+    cfg = settings or get_settings()
+    logger.info(f"Initializing all infrastructure clients for {cfg.APP_NAME}...")
+
+    # 1. Initialize Database Engine & Tables
+    engine_inst = get_async_engine(cfg)
+    get_session_factory(cfg)
+
+    if create_tables:
+        from app.core.database import init_db
+
+        logger.info("Verifying and auto-creating database tables...")
+        await init_db(engine_inst)
+
+    # 2. Warm up Qdrant, Ollama and Cloud Clients
+    get_qdrant_client(cfg)
+    ollama = get_ollama_client(cfg)
+    try:
+        resp = await ollama.get("/api/tags", timeout=0.5)
+        if resp.status_code == 200:
+            logger.info("Ollama local daemon detected and reachable.")
+    except Exception:
+        logger.warning(
+            f"Ollama local daemon is currently offline or unreachable at {cfg.OLLAMA_BASE_URL} "
+            "(cloud models and sessions remain fully functional; local models will be degraded)."
+        )
+
+    logger.info("All infrastructure clients and connection pools initialized.")
+
+
+async def close_all_clients() -> None:
+    """Gracefully close all global client pools and connections on application shutdown."""
+    logger.info("Closing all infrastructure client pools...")
+    cleanup_routines = [
+        ("database_engine", close_database_engine),
+        ("qdrant_client", close_qdrant_client),
+        ("ollama_client", close_ollama_client),
+        ("cloud_llm_clients", close_cloud_llm_clients),
+    ]
+
+    for name, cleanup_fn in cleanup_routines:
+        try:
+            await cleanup_fn()
+        except Exception as exc:
+            logger.warning(f"Error while closing {name}: {exc}")
+
+    logger.info("All infrastructure client pools closed.")
