@@ -66,7 +66,8 @@ def test_hybrid_vector_store_ensure_and_upsert(mock_qdrant_client: QdrantClient,
     # 3. Check stats after upsert
     stats_after = store.get_collection_stats(collection_name="test_lenny")
     assert stats_after["points_count"] == 2
-    assert stats_after["dense_dim"] == 384
+    assert stats_after["dense_dim"] == 768
+
 
 
 def test_hybrid_search_retrieval(mock_qdrant_client: QdrantClient, sample_chunks: list[TranscriptChunk]) -> None:

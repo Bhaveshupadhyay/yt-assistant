@@ -25,11 +25,20 @@ class HybridVectorStore:
         """Initialize the hybrid vector store."""
         self.settings = settings or get_settings()
         self.collection_name = self.settings.QDRANT_COLLECTION_NAME
-        self.dense_dim = self.settings.EMBEDDING_DENSE_DIMENSION
-
         self.client: QdrantClient = client or get_qdrant_sync_client(self.settings)
-        self.dense_model = dense_model or get_dense_embedding_model(self.settings.EMBEDDING_DENSE_MODEL)
+        if dense_model is not None:
+            self.dense_model = dense_model
+            try:
+                probe = list(self.dense_model.embed(["probe"]))[0]
+                self.dense_dim = len(probe)
+            except Exception:
+                self.dense_dim = self.settings.EMBEDDING_DENSE_DIMENSION
+        else:
+            self.dense_model = get_dense_embedding_model(self.settings.EMBEDDING_DENSE_MODEL)
+            self.dense_dim = self.settings.EMBEDDING_DENSE_DIMENSION
+
         self.sparse_model = sparse_model or get_sparse_embedding_model(self.settings.EMBEDDING_SPARSE_MODEL)
+
 
     def ensure_collection(
         self,

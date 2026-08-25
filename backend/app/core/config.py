@@ -55,19 +55,20 @@ class Settings(BaseSettings):
         description="Optional path to local embedded Qdrant disk storage",
     )
 
-    # Embedding Models (FastEmbed low-memory models)
+    # Embedding Models (FastEmbed high-precision local models)
     EMBEDDING_DENSE_MODEL: str = Field(
-        default="sentence-transformers/all-MiniLM-L6-v2",
-        description="FastEmbed dense embedding model (~70MB RAM, 384 dimensions)",
+        default="BAAI/bge-base-en-v1.5",
+        description="FastEmbed dense embedding model (~210MB RAM, 768 dimensions, top MTEB benchmark)",
     )
     EMBEDDING_SPARSE_MODEL: str = Field(
-        default="Qdrant/bm25",
-        description="FastEmbed sparse embedding model (~10MB RAM)",
+        default="prithivida/Splade_PP_en_v1",
+        description="FastEmbed neural sparse embedding model (SPLADE++, ~530MB RAM)",
     )
     EMBEDDING_DENSE_DIMENSION: int = Field(
-        default=384,
+        default=768,
         description="Vector dimension for the dense embedding model",
     )
+
 
     # Transcripts Corpus
     TRANSCRIPTS_DIR: str = Field(
