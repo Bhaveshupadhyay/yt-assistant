@@ -4,7 +4,7 @@
   "guest_name": "Julie Zhuo",
   "guest_role": "Co-founder of Sundial, former VP of Product Design at Facebook, Author of 'The Making of a Manager'",
   "topic": "Product Design, Leadership, Data-Driven Design, Retention Diagnostics, Team Management",
-  "url": "https://www.youtube.com/watch?v=julie_zhuo_design",
+  "url": "https://www.youtube.com/watch?v=3uG7dK8wQ1w",
   "publication_date": "2023-02-16",
   "summary": "Julie Zhuo discusses how design and product teams balance qualitative user empathy with quantitative metrics, how to diagnose product churn, and key leadership lessons from managing hundreds of designers at Facebook.",
   "key_takeaways": [
@@ -32,7 +32,7 @@
     {
       "timestamp": "00:03:10",
       "speaker": "Julie Zhuo",
-      "text": "Data is incredible for telling you *what* is happening—where users are dropping off, which buttons they click, and how cohorts retain. But data rarely tells you *why* something is happening. Why did the user abandon checkout? Were they confused by the terminology, did they lose trust when we asked for a phone number, or was the value proposition unclear? Intuition and qualitative research provide the hypothesis, while metrics provide the validation. When teams treat metrics as the sole truth, they fall into the local maxima trap of hyper-optimizing button colors while missing a fundamental product flaw."
+      "text": "Data is incredible for telling you *what* is happening\u2014where users are dropping off, which buttons they click, and how cohorts retain. But data rarely tells you *why* something is happening. Why did the user abandon checkout? Were they confused by the terminology, did they lose trust when we asked for a phone number, or was the value proposition unclear? Intuition and qualitative research provide the hypothesis, while metrics provide the validation. When teams treat metrics as the sole truth, they fall into the local maxima trap of hyper-optimizing button colors while missing a fundamental product flaw."
     },
     {
       "timestamp": "00:08:45",
@@ -52,7 +52,7 @@
     {
       "timestamp": "00:16:15",
       "speaker": "Julie Zhuo",
-      "text": "As an individual contributor, your output is your own direct work—the mocks you draw, the code you ship. As a manager, your output is the collective output of your team. You have to shift from 'How do I do this task?' to 'How do I clarify the purpose, coach the people, and build a lightweight process so that five people can do this 10x better than I ever could alone?'"
+      "text": "As an individual contributor, your output is your own direct work\u2014the mocks you draw, the code you ship. As a manager, your output is the collective output of your team. You have to shift from 'How do I do this task?' to 'How do I clarify the purpose, coach the people, and build a lightweight process so that five people can do this 10x better than I ever could alone?'"
     },
     {
       "timestamp": "00:22:40",

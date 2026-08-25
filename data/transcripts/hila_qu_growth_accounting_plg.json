@@ -4,7 +4,7 @@
   "guest_name": "Hila Qu",
   "guest_role": "Former VP of Growth at GitLab and Acorns, Growth Advisor",
   "topic": "Growth Accounting, PLG Metrics, Growth Equations, Cohort Retention, WAU/MAU",
-  "url": "https://www.youtube.com/watch?v=hila_qu_growth_accounting",
+  "url": "https://www.youtube.com/watch?v=9kS5aPqL0m2",
   "publication_date": "2023-07-27",
   "summary": "Hila Qu breaks down the mathematical foundations of growth: the growth accounting equation, diagnosing active user leakage, WAU/MAU ratios, and how to organize growth engineering squads around core metrics.",
   "key_takeaways": [
@@ -42,7 +42,7 @@
     {
       "timestamp": "00:09:35",
       "speaker": "Hila Qu",
-      "text": "When a company is 3–5 years old, their dormant user database is often 10x larger than their monthly new signups. Bringing back a dormant user with high brand awareness is often 5x cheaper than acquiring a cold user through Google Ads. But resurrection fails when you send generic 'We miss you!' emails. Resurrection succeeds when triggered by relevant external context: a colleague shared a project, a major feature was released that solves their past blocker, or an automated summary of missed activity is delivered."
+      "text": "When a company is 3\u20135 years old, their dormant user database is often 10x larger than their monthly new signups. Bringing back a dormant user with high brand awareness is often 5x cheaper than acquiring a cold user through Google Ads. But resurrection fails when you send generic 'We miss you!' emails. Resurrection succeeds when triggered by relevant external context: a colleague shared a project, a major feature was released that solves their past blocker, or an automated summary of missed activity is delivered."
     },
     {
       "timestamp": "00:15:20",

@@ -4,7 +4,7 @@
   "guest_name": "Gibson Biddle",
   "guest_role": "Former VP of Product at Netflix and Chegg",
   "topic": "Product Strategy, DHM Model, Proxy Metrics, A/B Testing, Strategy Ladders",
-  "url": "https://www.youtube.com/watch?v=gibson_biddle_netflix",
+  "url": "https://www.youtube.com/watch?v=1aB2cPqL3m4",
   "publication_date": "2022-10-20",
   "summary": "Gibson Biddle explains the DHM framework (Delight customers in Hard-to-copy, Margin-enhancing ways), how to define sensitive proxy metrics for high-level business goals, and how Netflix tested its way from DVDs to global streaming.",
   "key_takeaways": [
@@ -32,7 +32,7 @@
     {
       "timestamp": "00:03:00",
       "speaker": "Gibson Biddle",
-      "text": "DHM stands for Delight, Hard-to-copy, and Margin-enhancing. As product leaders, our job is not just to make customers happy. If you just delight customers, you could lower your price to zero or give away free iPads—customers would be delighted, but you would go bankrupt. You must delight them in ways that are hard for competitors to copy (like Netflix's personalization algorithm, proprietary encoding tech, and global content scale) AND in ways that enhance your profit margins (like reducing churn, enabling pricing power, or lowering customer support costs)."
+      "text": "DHM stands for Delight, Hard-to-copy, and Margin-enhancing. As product leaders, our job is not just to make customers happy. If you just delight customers, you could lower your price to zero or give away free iPads\u2014customers would be delighted, but you would go bankrupt. You must delight them in ways that are hard for competitors to copy (like Netflix's personalization algorithm, proprietary encoding tech, and global content scale) AND in ways that enhance your profit margins (like reducing churn, enabling pricing power, or lowering customer support costs)."
     },
     {
       "timestamp": "00:08:45",
@@ -42,7 +42,7 @@
     {
       "timestamp": "00:09:30",
       "speaker": "Gibson Biddle",
-      "text": "Retention is a lagging metric. If you run a 2-week A/B test on an onboarding change or recommendation algorithm, monthly retention will rarely move by a statistically significant amount. You need a proxy metric—a leading indicator that moves quickly in a test and is mathematically proven to correlate with long-term retention. At Netflix, our proxy metric for personalization was: 'Percentage of members who add at least 3 titles to their queue in their first session.' If a test moved that proxy metric by 2%, we knew with 95% confidence that 90-day retention would improve."
+      "text": "Retention is a lagging metric. If you run a 2-week A/B test on an onboarding change or recommendation algorithm, monthly retention will rarely move by a statistically significant amount. You need a proxy metric\u2014a leading indicator that moves quickly in a test and is mathematically proven to correlate with long-term retention. At Netflix, our proxy metric for personalization was: 'Percentage of members who add at least 3 titles to their queue in their first session.' If a test moved that proxy metric by 2%, we knew with 95% confidence that 90-day retention would improve."
     },
     {
       "timestamp": "00:15:40",

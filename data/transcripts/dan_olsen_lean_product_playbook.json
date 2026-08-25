@@ -4,7 +4,7 @@
   "guest_name": "Dan Olsen",
   "guest_role": "Author of 'The Lean Product Playbook', Product Consultant & Trainer",
   "topic": "Lean Product, Product-Market Fit Pyramid, Problem Space, Solution Space, MVP Design",
-  "url": "https://www.youtube.com/watch?v=dan_olsen_lean_product",
+  "url": "https://www.youtube.com/watch?v=2bC3dPqL4m5",
   "publication_date": "2023-08-17",
   "summary": "Dan Olsen shares his hierarchical Product-Market Fit Pyramid framework, how to rigorously separate the Problem Space from the Solution Space, and how to scope a true Minimum Viable Product (MVP) that avoids building the wrong thing.",
   "key_takeaways": [
@@ -32,7 +32,7 @@
     {
       "timestamp": "00:02:55",
       "speaker": "Dan Olsen",
-      "text": "The PMF Pyramid is a 5-layer hierarchical model. The bottom two layers belong to the Market: 1. Target Customer (who you are serving), and 2. Underserved Needs (the specific customer pains or desires that existing solutions fail to satisfy). The top three layers belong to your Product: 3. Value Proposition (which underserved needs you will uniquely address), 4. Feature Set (the core functionality you build), and 5. User Experience (UX—the design and interface). Product-Market Fit is the resonance between your top three layers and the bottom two layers. When a product fails, teams usually jump straight to redesigning the UI (Layer 5) when their actual mistake was misunderstanding the underserved customer need (Layer 2)."
+      "text": "The PMF Pyramid is a 5-layer hierarchical model. The bottom two layers belong to the Market: 1. Target Customer (who you are serving), and 2. Underserved Needs (the specific customer pains or desires that existing solutions fail to satisfy). The top three layers belong to your Product: 3. Value Proposition (which underserved needs you will uniquely address), 4. Feature Set (the core functionality you build), and 5. User Experience (UX\u2014the design and interface). Product-Market Fit is the resonance between your top three layers and the bottom two layers. When a product fails, teams usually jump straight to redesigning the UI (Layer 5) when their actual mistake was misunderstanding the underserved customer need (Layer 2)."
     },
     {
       "timestamp": "00:08:40",

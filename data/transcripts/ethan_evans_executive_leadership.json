@@ -4,7 +4,7 @@
   "guest_name": "Ethan Evans",
   "guest_role": "Former Vice President at Amazon (Twitch Prime, Prime Video, Appstore)",
   "topic": "Career Growth, Executive Leadership, Managing Up, Decision Making, Amazon Leadership Principles",
-  "url": "https://www.youtube.com/watch?v=ethan_evans_leadership",
+  "url": "https://www.youtube.com/watch?v=3cD4ePqL5m6",
   "publication_date": "2023-09-14",
   "summary": "Ethan Evans shares insights from his 15-year career as a Vice President at Amazon, managing over 800 people, including how to break through the career plateau from Senior to Principal/Director, 2x2 decision matrices, and executive communication.",
   "key_takeaways": [
@@ -42,7 +42,7 @@
     {
       "timestamp": "00:09:25",
       "speaker": "Ethan Evans",
-      "text": "Most corporate bureaucracy happens because organizations treat every minor decision like an irreversible, life-or-death crisis. At Amazon, decisions are categorized into Type 1 (One-Way Doors) and Type 2 (Two-Way Doors). A Type 1 decision is irreversible—like a major M&A acquisition, a public pricing change, or a fundamental architectural rewrite. These require deep deliberation and executive consensus. A Type 2 decision is easily reversible—like an A/B test layout, a copy change, or an internal tooling trial. If you walk through a Type 2 door and don't like what you see, you can simply walk back. Type 2 decisions should be made rapidly by small teams with 70% information rather than waiting for 100% certainty."
+      "text": "Most corporate bureaucracy happens because organizations treat every minor decision like an irreversible, life-or-death crisis. At Amazon, decisions are categorized into Type 1 (One-Way Doors) and Type 2 (Two-Way Doors). A Type 1 decision is irreversible\u2014like a major M&A acquisition, a public pricing change, or a fundamental architectural rewrite. These require deep deliberation and executive consensus. A Type 2 decision is easily reversible\u2014like an A/B test layout, a copy change, or an internal tooling trial. If you walk through a Type 2 door and don't like what you see, you can simply walk back. Type 2 decisions should be made rapidly by small teams with 70% information rather than waiting for 100% certainty."
     },
     {
       "timestamp": "00:15:20",
@@ -62,7 +62,7 @@
     {
       "timestamp": "00:23:15",
       "speaker": "Ethan Evans",
-      "text": "PowerPoint is banned because slides hide sloppy thinking behind bullet points. Instead, the author writes a 6-page narrative structured with: Context, Problem, Strategic Tenets, Solution Architecture, Financials / ROI, and FAQs. The first 20 minutes of every executive meeting is spent in dead silence reading the memo. It levels the playing field—introverts and junior PMs with clear prose beat charismatic presenters with flashy slides every single time."
+      "text": "PowerPoint is banned because slides hide sloppy thinking behind bullet points. Instead, the author writes a 6-page narrative structured with: Context, Problem, Strategic Tenets, Solution Architecture, Financials / ROI, and FAQs. The first 20 minutes of every executive meeting is spent in dead silence reading the memo. It levels the playing field\u2014introverts and junior PMs with clear prose beat charismatic presenters with flashy slides every single time."
     }
   ]
 }

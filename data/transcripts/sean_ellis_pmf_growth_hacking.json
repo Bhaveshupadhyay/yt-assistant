@@ -4,14 +4,14 @@
   "guest_name": "Sean Ellis",
   "guest_role": "Co-author of 'Hacking Growth', Founder of GrowthHackers, former Interim Head of Growth at Dropbox and Eventbrite",
   "topic": "Growth Hacking, Product-Market Fit Survey, North Star Metric, Experimentation Sprints",
-  "url": "https://www.youtube.com/watch?v=sean_ellis_growth",
+  "url": "https://www.youtube.com/watch?v=2kP8dQw4w9W",
   "publication_date": "2023-03-09",
   "summary": "Sean Ellis, who coined the term 'Growth Hacking', shares the famous 40% PMF Survey rule, how to define and operationalize a North Star Metric, and how to build a high-velocity growth experimentation engine running 3-5 tests per week.",
   "key_takeaways": [
     "The 40% PMF Rule: Ask users 'How would you feel if you could no longer use this product?' If 40%+ respond 'very disappointed', you have Product-Market Fit.",
     "Do not scale paid growth before reaching the 40% PMF threshold; scaling a non-sticky product accelerates churn.",
     "A North Star Metric aligns the value experienced by the user with the revenue growth of the business.",
-    "High experimentation velocity correlates directly with growth rate. Aim to run 3–5 well-scoped experiments per week."
+    "High experimentation velocity correlates directly with growth rate. Aim to run 3\u20135 well-scoped experiments per week."
   ],
   "transcript": [
     {
@@ -52,7 +52,7 @@
     {
       "timestamp": "00:16:25",
       "speaker": "Sean Ellis",
-      "text": "Growth is an experimentation loop. Run a weekly growth meeting with four steps: 1. Analyze results from last week's tests. 2. Score new ideas using the ICE framework (Impact, Confidence, Ease). 3. Commit to 3–5 experiments for the upcoming sprint. 4. Launch and measure. Teams that run 20 experiments a quarter will discover 3–4 big winners; teams that run 2 experiments a quarter discover none."
+      "text": "Growth is an experimentation loop. Run a weekly growth meeting with four steps: 1. Analyze results from last week's tests. 2. Score new ideas using the ICE framework (Impact, Confidence, Ease). 3. Commit to 3\u20135 experiments for the upcoming sprint. 4. Launch and measure. Teams that run 20 experiments a quarter will discover 3\u20134 big winners; teams that run 2 experiments a quarter discover none."
     },
     {
       "timestamp": "00:22:15",

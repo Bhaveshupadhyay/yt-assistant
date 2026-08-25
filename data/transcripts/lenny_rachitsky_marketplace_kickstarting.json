@@ -4,7 +4,7 @@
   "guest_name": "Lenny Rachitsky",
   "guest_role": "Author of Lenny's Newsletter & Host of Lenny's Podcast, former Growth PM at Airbnb",
   "topic": "Marketplaces, Cold Start Problem, Supply vs Demand, Liquidity, Retention",
-  "url": "https://www.youtube.com/watch?v=lenny_rachitsky_marketplaces",
+  "url": "https://www.youtube.com/watch?v=7hP1dKw8w0Q",
   "publication_date": "2023-01-10",
   "summary": "Lenny Rachitsky synthesizes years of research from interviewing founders of Airbnb, Uber, DoorDash, Etsy, and Instacart on how to solve the marketplace chicken-and-egg problem, achieve initial liquidity, and scale supply and demand.",
   "key_takeaways": [
@@ -37,7 +37,7 @@
     {
       "timestamp": "00:11:55",
       "speaker": "Lenny Rachitsky",
-      "text": "Hyper-constrain your initial marketplace. If you launch nationwide on day one, your supply will be so scattered across 50 cities that your search fill rate will be 2%. Instead, dominate one neighborhood, one campus, or one niche category. When Airbnb launched, they focused on high-demand event spikes—like the Democratic National Convention in Denver or SXSW in Austin—where hotels were 100% sold out. When liquidity reaches 80% in one micro-market, you bottle that playbook and expand city by city."
+      "text": "Hyper-constrain your initial marketplace. If you launch nationwide on day one, your supply will be so scattered across 50 cities that your search fill rate will be 2%. Instead, dominate one neighborhood, one campus, or one niche category. When Airbnb launched, they focused on high-demand event spikes\u2014like the Democratic National Convention in Denver or SXSW in Austin\u2014where hotels were 100% sold out. When liquidity reaches 80% in one micro-market, you bottle that playbook and expand city by city."
     },
     {
       "timestamp": "00:18:00",
@@ -57,7 +57,7 @@
     {
       "timestamp": "00:25:05",
       "speaker": "Lenny Rachitsky",
-      "text": "Your take rate must reflect the value you provide throughout the transaction. If you charge 20% but only provide an introduction, buyers and sellers will take future transactions off-platform (disintermediation). To prevent disintermediation: 1. Provide essential workflow tools (invoicing, scheduling, escrow, insurance, ratings). 2. Make payment on-platform safer and easier than off-platform cash. 3. Align take rate with transaction frequency: high-frequency commodities (Uber) can sustain 20–25% take rates, while low-frequency high-ticket transactions (real estate) must have lower take rates (3–5%)."
+      "text": "Your take rate must reflect the value you provide throughout the transaction. If you charge 20% but only provide an introduction, buyers and sellers will take future transactions off-platform (disintermediation). To prevent disintermediation: 1. Provide essential workflow tools (invoicing, scheduling, escrow, insurance, ratings). 2. Make payment on-platform safer and easier than off-platform cash. 3. Align take rate with transaction frequency: high-frequency commodities (Uber) can sustain 20\u201325% take rates, while low-frequency high-ticket transactions (real estate) must have lower take rates (3\u20135%)."
     }
   ]
 }
