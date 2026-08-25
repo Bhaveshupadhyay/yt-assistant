@@ -132,12 +132,12 @@ async def list_models(
         ModelProvider.ANTHROPIC.value: ProviderStatus(
             name="Anthropic Claude",
             configured=anthropic_configured,
-            connected=anthropic_configured,
+            connected=None,
         ),
         ModelProvider.OPENAI.value: ProviderStatus(
             name="OpenAI",
             configured=openai_configured,
-            connected=openai_configured,
+            connected=None,
         ),
         ModelProvider.OLLAMA.value: ProviderStatus(
             name="Ollama (Local)",

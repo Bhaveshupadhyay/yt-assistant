@@ -78,8 +78,12 @@ def test_get_llm_client_factory_switching():
 async def test_ollama_offline_raises_service_unavailable():
     """Verify that when Ollama is offline, OllamaClient raises OllamaUnavailableException (503)."""
     settings = Settings(OLLAMA_BASE_URL="http://localhost:59999")  # Unused port
-    mock_http_client = AsyncMock()
-    mock_http_client.stream.side_effect = httpx.ConnectError("Connection refused")
+    from unittest.mock import MagicMock
+    mock_http_client = MagicMock(spec=httpx.AsyncClient)
+    mock_stream_ctx = MagicMock()
+    mock_stream_ctx.__aenter__.side_effect = httpx.ConnectError("Connection refused")
+    mock_stream_ctx.__aexit__.return_value = None
+    mock_http_client.stream.return_value = mock_stream_ctx
 
     client = OllamaClient(
         model_name=ModelName.LLAMA_3_2,

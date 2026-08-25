@@ -85,22 +85,9 @@ async def stream_chat(
     if not session:
         raise SessionNotFoundException(session_id=payload.session_id)
 
-    # 2. Persist user prompt in database
-    await message_repo.create(
-        session_id=payload.session_id,
-        role=MessageRole.USER,
-        content=payload.message,
-    )
-    await db.commit()
-
-    # 3. Determine target model and provider
+    # 2. Determine target model and provider
     target_model = payload.model or session.model_used or settings.OLLAMA_MODEL
     provider = resolve_provider_for_model(target_model)
-
-    # If model was explicitly passed, update session model_used
-    if payload.model and payload.model != session.model_used:
-        await session_repo.update(session_id=payload.session_id, model_used=payload.model)
-        await db.commit()
 
     async def sse_event_generator() -> AsyncGenerator[str, None]:
         start_time = time.perf_counter()
@@ -110,6 +97,17 @@ async def stream_chat(
         full_generated_tokens: list[str] = []
 
         try:
+            # 1. Register user message in current session transaction
+            user_msg = await message_repo.create(
+                session_id=payload.session_id,
+                role=MessageRole.USER,
+                content=payload.message,
+            )
+
+            # Update session model if explicitly changed
+            if payload.model and payload.model != session.model_used:
+                await session_repo.update(session_id=payload.session_id, model_used=payload.model)
+
             # ─── Stage 1: Retrieval Status ────────────────────────────────────
             yield format_sse(
                 "status",
@@ -147,11 +145,15 @@ async def stream_chat(
                 clean_text = fallback_msg.strip()
                 extracted_artifacts = []
             else:
-                # Fetch conversation history for session context
-                prior_messages = await message_repo.get_by_session_id(payload.session_id, limit=20)
+                # Fetch recent conversation context chronologically (excluding current prompt)
+                prior_messages = await message_repo.get_recent_history(
+                    session_id=payload.session_id,
+                    limit=20,
+                    exclude_id=user_msg.id,
+                )
                 history_list = [
                     {"role": m.role.value if hasattr(m.role, "value") else str(m.role), "content": m.content}
-                    for m in prior_messages[:-1]  # Exclude current prompt already inserted
+                    for m in prior_messages
                 ]
 
                 if is_ship30:
@@ -217,6 +219,7 @@ async def stream_chat(
                     },
                 )
 
+            # Commit the atomic conversational turn (user prompt + assistant response + artifacts)
             await db.commit()
 
             # ─── Stage 5: Structured Logging & Done Event ──────────────────────
@@ -255,6 +258,7 @@ async def stream_chat(
             )
 
         except OllamaUnavailableException as exc:
+            await db.rollback()
             logger.warning(f"Ollama unavailable during stream: {exc}")
             yield format_sse(
                 "error",
@@ -265,6 +269,7 @@ async def stream_chat(
                 ),
             )
         except AppException as exc:
+            await db.rollback()
             logger.error(f"Application error during stream: {exc}")
             yield format_sse(
                 "error",
@@ -275,6 +280,7 @@ async def stream_chat(
                 ),
             )
         except Exception as exc:
+            await db.rollback()
             logger.exception(f"Unexpected streaming exception: {exc}")
             yield format_sse(
                 "error",

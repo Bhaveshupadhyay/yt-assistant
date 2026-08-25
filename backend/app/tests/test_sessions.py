@@ -36,11 +36,13 @@ async def test_list_sessions_pagination(async_client: AsyncClient):
     assert resp.status_code == 200
     items = resp.json()
     assert len(items) == 3
+    first_page_ids = {item["id"] for item in items}
 
     resp_offset = await async_client.get("/api/v1/sessions?limit=3&offset=3")
     assert resp_offset.status_code == 200
     offset_items = resp_offset.json()
-    assert len(offset_items) >= 2
+    assert len(offset_items) == 2
+    assert first_page_ids.isdisjoint(item["id"] for item in offset_items)
 
 
 @pytest.mark.asyncio
