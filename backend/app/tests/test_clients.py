@@ -30,11 +30,13 @@ def test_get_database_engine_and_factory():
     assert isinstance(factory, async_sessionmaker)
 
 
-def test_qdrant_client_creation():
+@pytest.mark.asyncio
+async def test_qdrant_client_creation():
     """Verify AsyncQdrantClient instantiation via get_qdrant_client."""
     settings = Settings(QDRANT_URL="http://localhost:6333")
     client = get_qdrant_client(settings)
     assert isinstance(client, AsyncQdrantClient)
+    await close_all_clients()
 
 
 def test_http_clients_creation():

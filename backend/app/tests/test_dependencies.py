@@ -30,11 +30,10 @@ def test_repository_dependencies(db_session: AsyncSession):
     assert art_repo.session is db_session
 
 
-def test_service_dependencies():
+def test_service_dependencies(test_settings: Settings):
     """Verify LLM and RAG service providers return instances conforming to protocols."""
-    settings = Settings()
-    llm_service = get_llm_service(settings=settings)
-    rag_service = get_rag_service(settings=settings)
+    llm_service = get_llm_service(settings=test_settings)
+    rag_service = get_rag_service(settings=test_settings)
 
     assert llm_service is not None
     assert rag_service is not None

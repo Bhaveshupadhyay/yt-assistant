@@ -80,11 +80,17 @@ def _resolve_effective_qdrant_path(cfg: Settings) -> str | None:
 
 def get_qdrant_client(settings: Settings | None = None) -> AsyncQdrantClient:
     """Return or lazily create the asynchronous Qdrant client singleton."""
-    global _qdrant_client
+    global _qdrant_client, _qdrant_sync_client
     if _qdrant_client is None:
         cfg = settings or get_settings()
         local_path = _resolve_effective_qdrant_path(cfg)
         if local_path and not cfg.QDRANT_API_KEY:
+            if _qdrant_sync_client is not None:
+                try:
+                    _qdrant_sync_client.close()
+                except Exception:
+                    pass
+                _qdrant_sync_client = None
             logger.info(f"Initializing AsyncQdrantClient with local storage path: {local_path}")
             _qdrant_client = AsyncQdrantClient(path=local_path)
         else:
@@ -100,13 +106,19 @@ def get_qdrant_client(settings: Settings | None = None) -> AsyncQdrantClient:
 
 def get_qdrant_sync_client(settings: Settings | None = None) -> Any:
     """Return or lazily create the synchronous Qdrant client for data ingestion and scripts."""
-    global _qdrant_sync_client
+    global _qdrant_client, _qdrant_sync_client
     if _qdrant_sync_client is None:
         from qdrant_client import QdrantClient
 
         cfg = settings or get_settings()
         local_path = _resolve_effective_qdrant_path(cfg)
         if local_path and not cfg.QDRANT_API_KEY:
+            if _qdrant_client is not None:
+                try:
+                    _qdrant_client.close()
+                except Exception:
+                    pass
+                _qdrant_client = None
             logger.info(f"Initializing QdrantClient with local storage path: {local_path}")
             _qdrant_sync_client = QdrantClient(path=local_path)
         else:
@@ -288,7 +300,7 @@ async def init_all_clients(settings: Settings | None = None, create_tables: bool
         await init_db(engine_inst)
 
     # 2. Warm up Qdrant, Ollama and Cloud Clients
-    get_qdrant_client(cfg)
+    get_qdrant_sync_client(cfg)
     ollama = get_ollama_client(cfg)
     try:
         resp = await ollama.get("/api/tags", timeout=0.5)
