@@ -74,8 +74,12 @@ def run_ingestion(
     close_client: bool = True,
 ) -> dict:
     """Execute the full chunking and hybrid vector ingestion pipeline."""
+    if batch_size < 1:
+        raise ValueError(f"batch_size must be at least 1, got {batch_size}")
+
     start_time = time.time()
     settings = get_settings()
+
 
     # 1. Resolve transcripts directory using settings
     input_path = Path(transcripts_dir) if transcripts_dir else find_default_transcripts_dir(settings)
@@ -191,8 +195,13 @@ def main() -> None:
     )
 
     args = parser.parse_args()
+    if args.batch_size < 1:
+        logger.error(f"--batch-size must be at least 1, got {args.batch_size}")
+        sys.exit(1)
+
     try:
         run_ingestion(
+
             transcripts_dir=args.transcripts_dir,
             recreate=args.recreate,
             batch_size=args.batch_size,

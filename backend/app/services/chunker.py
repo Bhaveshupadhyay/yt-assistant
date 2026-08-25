@@ -27,10 +27,16 @@ class TranscriptChunker:
         """Initialize the chunker with token bounds.
 
         Args:
-            min_tokens: Target minimum token count per chunk.
-            max_tokens: Hard ceiling target for chunk size before forcing a split.
-            overlap_tokens: Target token count preserved across adjacent chunk boundaries.
+            min_tokens: Target minimum token count per chunk. Must be positive.
+            max_tokens: Hard ceiling target for chunk size before forcing a split. Must be > min_tokens.
+            overlap_tokens: Target token count preserved across adjacent chunk boundaries. Must be non-negative.
         """
+        if min_tokens <= 0:
+            raise ValueError(f"min_tokens ({min_tokens}) must be greater than 0")
+        if max_tokens <= 0:
+            raise ValueError(f"max_tokens ({max_tokens}) must be greater than 0")
+        if overlap_tokens < 0:
+            raise ValueError(f"overlap_tokens ({overlap_tokens}) must be non-negative")
         if min_tokens >= max_tokens:
             raise ValueError(f"min_tokens ({min_tokens}) must be less than max_tokens ({max_tokens})")
         if overlap_tokens >= min_tokens:
@@ -67,7 +73,6 @@ class TranscriptChunker:
             else:
                 # Break sentence by word chunks
                 words = s.split()
-                # max words roughly max_chunk_tokens / 1.33
                 max_words = max(1, int(max_chunk_tokens / 1.33))
                 for i in range(0, len(words), max_words):
                     units.append(" ".join(words[i : i + max_words]))
@@ -104,7 +109,7 @@ class TranscriptChunker:
 
             speaker_prefix = f"{speaker}: "
             prefix_tokens = self.estimate_tokens(speaker_prefix)
-            available_turn_tokens = effective_max - prefix_tokens
+            available_turn_tokens = max(10, effective_max - prefix_tokens)
 
             turn_tokens = self.estimate_tokens(f"{speaker_prefix}{text}")
             if turn_tokens > effective_max:
@@ -137,8 +142,8 @@ class TranscriptChunker:
 
         for unit in units:
             unit_tokens = unit["tokens"]
-            # If adding this unit exceeds effective_max and we already meet min_tokens, seal chunk
-            if curr_tokens + unit_tokens > effective_max and curr_tokens >= self.min_tokens:
+            # If adding this unit exceeds effective_max and we have current units, seal chunk
+            if curr_units and (curr_tokens + unit_tokens > effective_max):
                 raw_chunks.append({
                     "units": list(curr_units),
                     "start_timestamp": curr_units[0]["timestamp"],
@@ -268,7 +273,7 @@ class TranscriptChunker:
 
         all_chunks: list[TranscriptChunk] = []
         failed_files: dict[str, str] = {}
-        files = sorted(list(path.glob("*.json")) + list(path.glob("*.md")) + list(path.glob("*.txt")))
+        files = sorted(list(path.rglob("*.json")) + list(path.rglob("*.md")) + list(path.rglob("*.txt")))
 
         logger.info(f"Discovered {len(files)} transcript files in {dir_path}")
         for file in files:

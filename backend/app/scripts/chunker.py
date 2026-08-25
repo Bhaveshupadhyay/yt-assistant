@@ -99,8 +99,9 @@ def main() -> None:
         chunks = chunker.chunk_directory(input_path)
 
     if not chunks:
-        logger.warning("No chunks were generated. Please verify transcript file formats.")
-        sys.exit(0)
+        logger.error("No chunks were generated. Please verify transcript file formats.")
+        sys.exit(1)
+
 
     token_counts = [c.token_count for c in chunks]
     avg_tokens = sum(token_counts) / len(chunks)

@@ -28,16 +28,17 @@ class HybridVectorStore:
         self.client: QdrantClient = client or get_qdrant_sync_client(self.settings)
         if dense_model is not None:
             self.dense_model = dense_model
-            try:
-                probe = list(self.dense_model.embed(["probe"]))[0]
-                self.dense_dim = len(probe)
-            except Exception:
-                self.dense_dim = self.settings.EMBEDDING_DENSE_DIMENSION
         else:
             self.dense_model = get_dense_embedding_model(self.settings.EMBEDDING_DENSE_MODEL)
+
+        try:
+            probe = list(self.dense_model.embed(["probe"]))[0]
+            self.dense_dim = len(probe)
+        except Exception:
             self.dense_dim = self.settings.EMBEDDING_DENSE_DIMENSION
 
         self.sparse_model = sparse_model or get_sparse_embedding_model(self.settings.EMBEDDING_SPARSE_MODEL)
+
 
 
     def ensure_collection(
@@ -114,11 +115,18 @@ class HybridVectorStore:
             # Generate dense embeddings
             dense_vectors = list(self.dense_model.embed(texts))
 
-            # Generate sparse BM25 embeddings
+            # Generate sparse BM25 / SPLADE embeddings
             sparse_vectors = list(self.sparse_model.embed(texts))
 
+            if len(dense_vectors) != len(batch) or len(sparse_vectors) != len(batch):
+                raise ValueError(
+                    f"Embedding batch size mismatch: expected {len(batch)} embeddings, "
+                    f"got {len(dense_vectors)} dense and {len(sparse_vectors)} sparse embeddings."
+                )
+
             points: list[models.PointStruct] = []
-            for chunk, dense_vec, sparse_vec in zip(batch, dense_vectors, sparse_vectors, strict=False):
+            for chunk, dense_vec, sparse_vec in zip(batch, dense_vectors, sparse_vectors, strict=True):
+
                 # Ensure dense vector is a list of floats
                 dense_list = dense_vec.tolist() if hasattr(dense_vec, "tolist") else list(dense_vec)
 

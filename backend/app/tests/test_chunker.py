@@ -11,6 +11,20 @@ from app.services.chunker import TranscriptChunker
 
 def test_chunker_initialization_validation() -> None:
     """Test parameter validation during chunker initialization."""
+    # min_tokens must be positive
+    with pytest.raises(ValueError, match="min_tokens"):
+        TranscriptChunker(min_tokens=-1, max_tokens=500)
+    with pytest.raises(ValueError, match="min_tokens"):
+        TranscriptChunker(min_tokens=0, max_tokens=500)
+
+    # max_tokens must be positive
+    with pytest.raises(ValueError, match="max_tokens"):
+        TranscriptChunker(min_tokens=100, max_tokens=0)
+
+    # overlap_tokens must be non-negative
+    with pytest.raises(ValueError, match="overlap_tokens"):
+        TranscriptChunker(min_tokens=100, max_tokens=200, overlap_tokens=-1)
+
     # min_tokens must be < max_tokens
     with pytest.raises(ValueError, match="min_tokens"):
         TranscriptChunker(min_tokens=700, max_tokens=500)
@@ -180,6 +194,30 @@ def test_chunk_file_json_and_plain_text(tmp_path: Path) -> None:
     txt_chunks = chunker.chunk_file(txt_path)
     assert len(txt_chunks) >= 1
     assert txt_chunks[0].episode_id == "sample_notes"
+
+
+def test_chunk_directory_recursive_discovery(tmp_path: Path) -> None:
+    """Test that chunk_directory scans subdirectories recursively."""
+    chunker = TranscriptChunker(min_tokens=50, max_tokens=100, overlap_tokens=10)
+    nested_dir = tmp_path / "nested" / "subfolder"
+    nested_dir.mkdir(parents=True)
+    nested_file = nested_dir / "nested_ep.json"
+    nested_file.write_text(
+        json.dumps({
+            "episode_id": "nested_1",
+            "episode_title": "Nested Episode",
+            "guest_name": "Nested Guest",
+            "guest_role": "Advisor",
+            "topic": "Strategy",
+            "url": "https://example.com",
+            "transcript": [{"speaker": "Nested Guest", "text": "Testing recursive discovery.", "timestamp": "00:00:00"}],
+        }),
+        encoding="utf-8",
+    )
+
+    chunks = chunker.chunk_directory(tmp_path, strict=True)
+    assert len(chunks) >= 1
+    assert chunks[0].guest_name == "Nested Guest"
 
 
 def test_chunk_directory_strict_mode_raises(tmp_path: Path) -> None:
