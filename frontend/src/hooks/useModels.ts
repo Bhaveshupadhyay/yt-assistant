@@ -1,12 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ModelInfo, ModelsCatalogResponse } from '../types/model';
 import { fetchModels } from '../lib/api';
 
+const STORAGE_KEY = 'lenny_active_model';
+
 export function useModels() {
   const [models, setModels] = useState<ModelInfo[]>([]);
-  const [activeModel, setActiveModel] = useState<string>('claude-3-5-sonnet');
+  const [activeModel, setActiveModelState] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEY) || 'llama3.2';
+    } catch {
+      return 'llama3.2';
+    }
+  });
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Keep a ref to the latest activeModel so loadModels doesn't re-trigger when activeModel changes
+  const activeModelRef = useRef<string>(activeModel);
+  activeModelRef.current = activeModel;
+
+  const setActiveModel = useCallback((modelId: string) => {
+    setActiveModelState(modelId);
+    try {
+      localStorage.setItem(STORAGE_KEY, modelId);
+    } catch {
+      // ignore storage errors
+    }
+  }, []);
 
   const loadModels = useCallback(async () => {
     try {
@@ -25,24 +46,29 @@ export function useModels() {
       }));
 
       setModels(formattedList);
-      
-      if (catalog.active_model && formattedList.some(
-        m => m.id === catalog.active_model && m.is_available,
-      )) {
-        setActiveModel(catalog.active_model);
-      } else if (
-        formattedList.length > 0 &&
-        !formattedList.some(m => m.id === activeModel && m.is_available)
-      ) {
-        const firstAvailable = formattedList.find(m => m.is_available) || formattedList[0];
-        setActiveModel(firstAvailable.id);
+
+      const currentSelection = activeModelRef.current;
+      const isCurrentInCatalog = formattedList.some(m => m.id === currentSelection);
+
+      // Only auto-assign if current selection is not registered in the catalog
+      if (!isCurrentInCatalog && formattedList.length > 0) {
+        const fallback =
+          (catalog.active_model && formattedList.some(m => m.id === catalog.active_model && m.is_available)
+            ? catalog.active_model
+            : null) ||
+          formattedList.find(m => m.is_available)?.id ||
+          formattedList[0]?.id;
+
+        if (fallback) {
+          setActiveModel(fallback);
+        }
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load model catalog');
     } finally {
       setIsLoading(false);
     }
-  }, [activeModel]);
+  }, [setActiveModel]);
 
   useEffect(() => {
     loadModels();
@@ -64,3 +90,4 @@ export function useModels() {
     refreshModels: loadModels,
   };
 }
+

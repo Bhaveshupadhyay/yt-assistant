@@ -69,13 +69,20 @@ export const Header: React.FC<HeaderProps> = ({
             className="cursor-pointer appearance-none bg-surface-secondary hover:bg-surface-secondary/80 border border-border rounded-xl pl-8 pr-8 py-1.5 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary transition-all"
           >
             {models.length > 0 ? (
-              models.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} {m.is_local ? '(Local Ollama)' : '(Cloud)'} {!m.is_available ? '[Offline]' : ''}
-                </option>
-              ))
+              <>
+                {!models.some((m) => m.id === activeModel) && (
+                  <option key={activeModel} value={activeModel}>
+                    {activeModel}
+                  </option>
+                )}
+                {models.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} {m.is_local ? '(Local Ollama)' : '(Cloud)'} {!m.is_available ? '[Offline]' : ''}
+                  </option>
+                ))}
+              </>
             ) : (
-              <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Cloud)</option>
+              <option value={activeModel}>{activeModel}</option>
             )}
           </select>
 
