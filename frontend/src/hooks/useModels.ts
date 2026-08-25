@@ -8,9 +8,9 @@ export function useModels() {
   const [models, setModels] = useState<ModelInfo[]>([]);
   const [activeModel, setActiveModelState] = useState<string>(() => {
     try {
-      return localStorage.getItem(STORAGE_KEY) || 'llama3.2';
+      return localStorage.getItem(STORAGE_KEY) || 'llama3.2:1b';
     } catch {
-      return 'llama3.2';
+      return 'llama3.2:1b';
     }
   });
   const [isLoading, setIsLoading] = useState<boolean>(true);

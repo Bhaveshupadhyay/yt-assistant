@@ -38,6 +38,7 @@ class ModelName(StrEnum):
     GEMINI_3_6_FLASH = "gemini-3.6-flash"
     GEMINI_3_6_FLASH_LITE = "gemini-3.6-flash-lite"
     GEMINI_3_7_PRO = "gemini-3.7-pro"
+    LLAMA_3_2_1B = "llama3.2:1b"
     LLAMA_3_2 = "llama3.2"
     MISTRAL = "mistral"
     QWEN_2_5 = "qwen2.5"

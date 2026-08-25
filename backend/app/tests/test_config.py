@@ -16,7 +16,7 @@ def test_default_settings():
     assert settings.LOG_LEVEL == LogLevel.INFO
     assert settings.LOG_FORMAT == LogFormat.JSON
     assert settings.OLLAMA_BASE_URL == "http://localhost:11434"
-    assert settings.OLLAMA_MODEL == ModelName.LLAMA_3_2.value
+    assert settings.OLLAMA_MODEL == ModelName.LLAMA_3_2_1B.value
     assert settings.QDRANT_URL == "http://localhost:6333"
     assert settings.QDRANT_COLLECTION_NAME == "lenny_transcripts"
 
