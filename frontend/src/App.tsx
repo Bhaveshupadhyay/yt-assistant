@@ -20,6 +20,7 @@ export function App() {
     activeModel,
     setActiveModel,
     isCurrentModelOffline,
+    isCurrentModelLocal,
     currentModelInfo,
     refreshModels,
   } = useModels();
@@ -69,11 +70,11 @@ export function App() {
     }
   }, [sessions, currentSessionId, isSessionsLoading, selectSession]);
 
-  // Load messages when currentSessionDetail changes
+  // Load messages and artifact state when currentSessionDetail changes
   useEffect(() => {
     if (currentSessionDetail && currentSessionDetail.messages) {
-      loadExistingMessages(currentSessionDetail.messages);
-      // If session had an artifact, pre-populate active artifact
+      loadExistingMessages(currentSessionDetail.messages, currentSessionDetail.artifacts);
+      // If session had artifacts, open the latest artifact; otherwise close viewer
       if (currentSessionDetail.artifacts && currentSessionDetail.artifacts.length > 0) {
         const lastArt = currentSessionDetail.artifacts[currentSessionDetail.artifacts.length - 1];
         openArtifact({
@@ -83,11 +84,14 @@ export function App() {
           title: lastArt.title,
           content: lastArt.content,
         });
+      } else {
+        closeArtifact();
       }
     } else if (!currentSessionId) {
       clearMessages();
+      closeArtifact();
     }
-  }, [currentSessionDetail, currentSessionId, loadExistingMessages, clearMessages, openArtifact]);
+  }, [currentSessionDetail, currentSessionId, loadExistingMessages, clearMessages, openArtifact, closeArtifact]);
 
   const handleNewChat = async () => {
     try {
@@ -104,20 +108,20 @@ export function App() {
     if (!currentSessionId) {
       try {
         const created = await createNewSession(activeModel);
-        await selectSession(created.id);
-        sendMessage(prompt, skill);
+        selectSession(created.id);
+        sendMessage(prompt, skill, created.id);
       } catch (err) {
         console.error('Failed to create session on prompt:', err);
       }
     } else {
-      sendMessage(prompt, skill);
+      sendMessage(prompt, skill, currentSessionId);
     }
   };
 
   return (
     <div className="h-screen w-screen flex flex-col bg-background text-foreground overflow-hidden font-sans">
-      {/* Top Warning Banner if Local Ollama is Offline */}
-      {isCurrentModelOffline && (
+      {/* Top Warning Banner ONLY if an offline Local Ollama model is selected */}
+      {isCurrentModelOffline && isCurrentModelLocal && (
         <OllamaStatusBanner
           modelName={currentModelInfo?.name || activeModel}
           onSwitchToCloud={() => setActiveModel('claude-3-5-sonnet')}

@@ -15,9 +15,10 @@ export function useChat(
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const sendMessage = useCallback(
-    async (prompt: string, skill?: string) => {
+    async (prompt: string, skill?: string, targetSessionId?: string) => {
+      const activeSessionId = targetSessionId || sessionId;
       const cleanPrompt = prompt.trim();
-      if (!cleanPrompt || !sessionId || isStreaming) return;
+      if (!cleanPrompt || !activeSessionId || isStreaming) return;
 
       setError(null);
       setIsStreaming(true);
@@ -29,7 +30,7 @@ export function useChat(
 
       const userMessage: ChatMessage = {
         id: userMsgId,
-        sessionId,
+        sessionId: activeSessionId,
         role: 'user',
         content: cleanPrompt,
         createdAt: new Date().toISOString(),
@@ -37,7 +38,7 @@ export function useChat(
 
       const assistantPlaceholder: ChatMessage = {
         id: assistantMsgId,
-        sessionId,
+        sessionId: activeSessionId,
         role: 'assistant',
         content: '',
         citations: [],
@@ -56,7 +57,7 @@ export function useChat(
 
       try {
         await streamChatSSE(
-          sessionId,
+          activeSessionId,
           cleanPrompt,
           activeModel,
           skill,
@@ -162,16 +163,30 @@ export function useChat(
     }
   }, []);
 
-  const loadExistingMessages = useCallback((loaded: any[]) => {
-    const formatted: ChatMessage[] = loaded.map((m: any) => ({
-      id: m.id,
-      sessionId: m.session_id || sessionId,
-      role: m.role,
-      content: m.content,
-      citations: m.citations || [],
-      hasArtifact: m.has_artifact || false,
-      createdAt: m.created_at,
-    }));
+  const loadExistingMessages = useCallback((loaded: any[], artifacts?: Artifact[]) => {
+    const artifactsByMsgId = new Map<string, Artifact>();
+    if (artifacts) {
+      for (const art of artifacts) {
+        const msgId = art.messageId || art.message_id;
+        if (msgId) {
+          artifactsByMsgId.set(msgId, art);
+        }
+      }
+    }
+
+    const formatted: ChatMessage[] = loaded.map((m: any) => {
+      const attachedArt = m.artifact || artifactsByMsgId.get(m.id) || null;
+      return {
+        id: m.id,
+        sessionId: m.session_id || m.sessionId || sessionId,
+        role: m.role,
+        content: m.content,
+        citations: m.citations || [],
+        hasArtifact: m.has_artifact || m.hasArtifact || Boolean(attachedArt),
+        artifact: attachedArt,
+        createdAt: m.created_at || m.createdAt,
+      };
+    });
     setMessages(formatted);
   }, [sessionId]);
 

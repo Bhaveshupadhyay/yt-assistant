@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { SessionSummary, SessionDetail } from '../types/session';
 import { fetchSessions, createSession, fetchSession, deleteSession as apiDeleteSession, updateSession as apiUpdateSession } from '../lib/api';
 
@@ -8,6 +8,7 @@ export function useSessions(initialModel = 'claude-3-5-sonnet') {
   const [currentSessionDetail, setCurrentSessionDetail] = useState<SessionDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const selectionRequestIdRef = useRef<number>(0);
 
   const loadSessionsList = useCallback(async () => {
     try {
@@ -24,15 +25,24 @@ export function useSessions(initialModel = 'claude-3-5-sonnet') {
   }, []);
 
   const selectSession = useCallback(async (sessionId: string) => {
+    const requestId = ++selectionRequestIdRef.current;
     setCurrentSessionId(sessionId);
+    setCurrentSessionDetail(null); // Clear immediately to avoid stale state
+
     try {
       setIsLoading(true);
       const detail = await fetchSession(sessionId);
-      setCurrentSessionDetail(detail);
+      if (selectionRequestIdRef.current === requestId) {
+        setCurrentSessionDetail(detail);
+      }
     } catch (err: any) {
-      setError(err.message || 'Failed to load session details');
+      if (selectionRequestIdRef.current === requestId) {
+        setError(err.message || 'Failed to load session details');
+      }
     } finally {
-      setIsLoading(false);
+      if (selectionRequestIdRef.current === requestId) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -41,6 +51,7 @@ export function useSessions(initialModel = 'claude-3-5-sonnet') {
       setIsLoading(true);
       const newSession = await createSession({ title, model_used: model });
       setSessions(prev => [newSession, ...prev]);
+      ++selectionRequestIdRef.current;
       setCurrentSessionId(newSession.id);
       setCurrentSessionDetail({
         id: newSession.id,

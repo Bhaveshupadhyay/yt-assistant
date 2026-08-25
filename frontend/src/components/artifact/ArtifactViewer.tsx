@@ -1,4 +1,6 @@
 import React from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { X, Eye, Code2, Download, Copy, Check, Maximize2, Minimize2 } from 'lucide-react';
 import type { Artifact, ArtifactViewMode } from '../../types/chat';
 import { SandboxedIframe } from './SandboxedIframe';
@@ -36,6 +38,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
   };
 
   const artifactType = artifact.artifactType || artifact.artifact_type || 'html';
+  const isMarkdown = artifactType === 'markdown';
 
   const handleDownload = () => {
     const ext = artifactType === 'html' ? 'html' : artifactType === 'svg' ? 'svg' : 'md';
@@ -70,6 +73,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
           {/* Tab Switcher */}
           <div className="flex items-center bg-surface-secondary rounded-lg p-0.5 border border-border mr-2">
             <button
+              type="button"
               onClick={() => viewMode !== 'preview' && onToggleViewMode()}
               className={`cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'preview'
@@ -81,6 +85,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
               <span>Preview</span>
             </button>
             <button
+              type="button"
               onClick={() => viewMode !== 'code' && onToggleViewMode()}
               className={`cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
                 viewMode === 'code'
@@ -95,6 +100,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
 
           {/* Copy Button */}
           <button
+            type="button"
             onClick={handleCopy}
             className="cursor-pointer p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-secondary transition-colors"
             title="Copy Artifact Content"
@@ -104,6 +110,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
 
           {/* Download Button */}
           <button
+            type="button"
             onClick={handleDownload}
             className="cursor-pointer p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-secondary transition-colors"
             title="Download Artifact File"
@@ -113,6 +120,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
 
           {/* Fullscreen Toggle */}
           <button
+            type="button"
             onClick={() => setIsFullscreen(!isFullscreen)}
             className="cursor-pointer p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-secondary transition-colors"
             title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
@@ -122,6 +130,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
 
           {/* Close Panel */}
           <button
+            type="button"
             onClick={onClose}
             className="cursor-pointer p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-secondary transition-colors"
             title="Close Panel (Esc)"
@@ -134,11 +143,38 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
       {/* Main Content Area */}
       <div className="flex-1 overflow-hidden relative">
         {viewMode === 'preview' ? (
-          <SandboxedIframe
-            content={artifact.content}
-            title={artifact.title}
-            isDark={isDark}
-          />
+          isMarkdown ? (
+            <div className="w-full h-full p-6 overflow-y-auto bg-surface prose text-xs sm:text-sm leading-relaxed text-foreground">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code({ node, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    const isInline = !match && !String(children).includes('\n');
+                    return isInline ? (
+                      <code className="bg-surface-secondary px-1.5 py-0.5 rounded font-mono text-[0.85em] text-primary" {...props}>
+                        {children}
+                      </code>
+                    ) : (
+                      <pre className="p-3 rounded-lg bg-slate-950 text-slate-100 font-mono text-xs overflow-x-auto border border-border">
+                        <code className={className} {...props}>
+                          {children}
+                        </code>
+                      </pre>
+                    );
+                  },
+                }}
+              >
+                {artifact.content}
+              </ReactMarkdown>
+            </div>
+          ) : (
+            <SandboxedIframe
+              content={artifact.content}
+              title={artifact.title}
+              isDark={isDark}
+            />
+          )
         ) : (
           <CodeView
             code={artifact.content}

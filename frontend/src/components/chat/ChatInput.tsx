@@ -30,7 +30,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!text.trim() || disabled) return;
+    if (!text.trim() || disabled || isStreaming) return;
 
     onSendMessage(text.trim(), isShip30Active ? 'ship30' : undefined);
     setText('');
