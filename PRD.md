@@ -20,7 +20,7 @@ Product Managers, Growth Leads, and Founders frequently need battle-tested tacti
 
 ### 1.2 The Solution
 **The Lenny Growth Assistant** is an internal AI conversational assistant and live artifact workbench that:
-1. Grounds answers 100% in Lenny's podcast transcript corpus with verbatim citations and guest attribution.
+1. Grounds answers strictly in Lenny's podcast transcript corpus with verifiable verbatim citations and guest attribution as a hard runtime invariant (system explicitly declines to answer if no relevant transcript context is retrieved).
 2. Formats strategic insights into structured, viral **"Ship 30 for 30"** atomic essays (~1,250 words).
 3. Renders interactive, sandboxed **Markdown and HTML/CSS/JS Artifacts** (calculators, checklists, frameworks) side-by-side with chat.
 4. Toggles seamlessly between **Enterprise Cloud LLMs (Anthropic Claude, OpenAI, Google Gemini)** and **100% Offline Local LLMs (Ollama)**.
@@ -61,7 +61,7 @@ Product Managers, Growth Leads, and Founders frequently need battle-tested tacti
 
 ## 4. Measurable Success Metrics
 
-1. **Groundedness and Accuracy:** >= 95% of factual claims cite specific guest names and episodes; 0% ungrounded hallucinations (the assistant explicitly declines to answer when data is absent).
+1. **Groundedness and Accuracy:** Hard runtime invariant of zero ungrounded hallucinations (the assistant explicitly declines to answer when data is absent in retrieved transcripts); empirical acceptance benchmark threshold of >= 95% verifiable citation accuracy against gold-standard evaluation suites.
 2. **Query Latency Targets:**
    - Vector Search Retrieval: < 150 ms.
    - First Token Time (Cloud LLMs): < 1.0 s.
@@ -104,11 +104,11 @@ Product Managers, Growth Leads, and Founders frequently need battle-tested tacti
 ### 5.4 In-App Sandboxed Artifact Viewer
 - **Separation of Concerns**: Response payloads cleanly separate conversational commentary from code/artifact blocks.
 - **Split-Screen Workbench**: Right-hand drawer slides open displaying **Preview** and **Code** tabs.
-- **Security Sandboxing**: HTML/JS artifacts execute inside an `<iframe sandbox="allow-scripts">` enforcing Content Security Policy (`connect-src 'none'`) to prevent parent DOM access, cookie theft, or external network requests.
+- **Security Sandboxing**: HTML/JS artifacts execute inside an `<iframe sandbox="allow-scripts">`. Because `allow-same-origin` is omitted, the document runs with an opaque null origin, preventing parent DOM access, cookie access, local storage access, top-level navigation, and form submissions.
 
 ### 5.5 Multi-Provider Model Architecture
-- **Supported Providers**: Anthropic (Claude 3.5 Sonnet, Claude 3.7 Sonnet), OpenAI (GPT-4o, GPT-4o-mini), Google Gemini (Gemini 3.6 Flash, Gemini 3.7 Pro), and Local Ollama (Llama 3.2, Mistral, Qwen 2.5, DeepSeek R1).
-- **Offline Daemon Detection**: System probes `http://localhost:11434` health. If offline, the UI provides non-blocking alerts and one-click cloud fallback.
+- **Supported Providers**: Anthropic (Claude 3.5 Sonnet, Claude 3.7 Sonnet), OpenAI (GPT-4o, GPT-4o-mini), Google Gemini (Gemini 3.6 Flash, Gemini 3.6 Flash Lite, Gemini 3.7 Pro), and Local Ollama (Llama 3.2, Mistral, Qwen 2.5, DeepSeek R1).
+- **Offline Daemon Detection**: System probes `http://localhost:11434` health. If offline, the UI provides a non-blocking alert with a one-click action to switch to an available Cloud provider.
 
 ---
 
@@ -117,8 +117,9 @@ Product Managers, Growth Leads, and Founders frequently need battle-tested tacti
 | Risk | Impact | Mitigation Strategy |
 |---|---|---|
 | **Hallucination on Niche Queries** | High | System prompt strictly instructs model to declare lack of evidence if relevance score falls below threshold. |
-| **Local Ollama Unavailable** | Medium | Backend detects connection timeout on port 11434, alerts UI, and provides automatic fallback to Cloud provider. |
-| **Malicious HTML Artifacts (XSS)** | High | Sandboxed `<iframe>` with restrictive CSP blocking parent DOM access, cookie theft, and external script fetching. |
+| **Local Ollama Unavailable** | Medium | Backend detects connection timeout on port 11434, alerts UI, and provides one-click manual fallback to available Cloud providers. |
+| **Malicious HTML Artifacts (XSS)** | High | Sandboxed `<iframe>` with `sandbox="allow-scripts"` (opaque origin) preventing parent DOM access, cookie theft, and local storage access. |
 | **Context Window Overflow** | Low | Semantic chunking with top-k token capping (max 3,000 context tokens injected per query). |
 | **Database Lock Contention** | Low | Async connection pooling with SQLAlchemy 2.0 and WAL mode enabled for SQLite / connection pool for PostgreSQL. |
+
 

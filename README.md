@@ -12,7 +12,7 @@
 | [**`PRD.md`**](./PRD.md) | **Product Requirements Document**: User personas, problem statement, success metrics, assumptions, in/out-of-scope boundaries, and risk mitigation. |
 | [**`architecture.md`**](./architecture.md) | **System Architecture**: PostgreSQL/SQLite schema, FastAPI Clean Architecture, RAG chunking & retrieval, multi-provider model routing, and iframe sandbox security. |
 | [**`design.md`**](./design.md) | **UI/UX Design Specification**: Split-screen workbench layout, interaction states (streaming, citations, artifacts), accessibility, and design tokens. |
-| [**`SKILL.md`**](file:///Users/bhaveshupadhyay/IdeaProjects/yt-assistant/.agents/skills/lenny-growth-assistant/SKILL.md) | **AI Agent Skill**: Operational domain rules, citation requirements, and Ship 30 for 30 writing standards. |
+| [**`SKILL.md`**](./.agents/skills/lenny-growth-assistant/SKILL.md) | **AI Agent Skill**: Operational domain rules, citation requirements, and Ship 30 for 30 writing standards. |
 
 ---
 
@@ -21,7 +21,7 @@
 1. **Strict Transcript Grounding (RAG)**: Answers tactical product and growth questions using *Lenny's Podcast* transcripts with verifiable guest attribution (e.g., Elena Verna, Brian Balfour, Shreyas Doshi, Casey Winters). Features high-precision hybrid retrieval (Dense BGE-base-en-v1.5 + Sparse SPLADE via FastEmbed and Qdrant) with a strict zero-hallucination fallback.
 2. **Dedicated "Ship 30 for 30" Essay Engine**: Synthesizes deep transcript insights into ~1,250-word atomic essays featuring magnetic contrarian hooks, 1-3-1 sentence pacing, visual bolding, and actionable 3-step closing checklists.
 3. **Claude-Style In-App Artifact Viewer**: Renders interactive HTML/CSS/JS applications, calculators, checklists, and formatted Markdown strategy memos side-by-side with chat.
-4. **Untrusted Code Security Sandbox**: Isolated `<iframe>` execution container with strict Content Security Policy (`connect-src 'none'`, `sandbox="allow-scripts"`) preventing parent DOM access, cookie leakage, or unauthorized external network requests.
+4. **Untrusted Code Security Sandbox**: Isolated `<iframe>` execution container (`sandbox="allow-scripts"`, without `allow-same-origin`) executing in an opaque null origin, strictly preventing parent DOM access, cookie theft, local storage leakage, or parent frame navigation.
 5. **Flexible Multi-Model Architecture**: Seamlessly switch between Enterprise Cloud LLMs (Anthropic Claude 3.5/3.7 Sonnet, OpenAI GPT-4o/4o-mini, Google Gemini 3.6/3.7) and **100% Offline Local LLMs (Ollama Llama 3.2, Mistral, Qwen 2.5, DeepSeek R1)** with automatic daemon health detection.
 6. **Multi-Session Persistence**: Async relational database persistence (SQLite with aiosqlite or PostgreSQL with asyncpg) storing chat sessions, message histories, timestamps, citation metadata, and generated artifacts.
 
@@ -289,7 +289,8 @@ Below are the variables supported in `.env` (mirrored in `.env.example`):
 
 ## Security and Sandboxing
 
-- **Zero Untrusted Execution**: Generated HTML, CSS, and JavaScript widgets are isolated in an `<iframe>` container with `sandbox="allow-scripts"`.
-- **Content Security Policy**: The iframe enforces `connect-src 'none'`, preventing unauthorized network requests, cookie exfiltration, or access to parent window storage.
-- **Input Sanitization**: User and model inputs are strictly typed and validated via Pydantic v2 schemas.
+- **Zero Untrusted Execution**: Generated HTML, CSS, and JavaScript widgets are isolated in an `<iframe>` container with `sandbox="allow-scripts"` (omitting `allow-same-origin` to run in an opaque null origin).
+- **Origin Isolation Controls**: Opaque origin strictly blocks script access to parent window DOM, host cookies, local storage, top-level navigation, and form submissions.
+- **Typed Schema Validation**: User request parameters and model payloads are strictly typed and validated using Pydantic v2 schemas; untrusted script execution is strictly contained within the sandboxed iframe container.
+
 
