@@ -26,9 +26,14 @@ export function useModels() {
 
       setModels(formattedList);
       
-      if (catalog.active_model && formattedList.some(m => m.id === catalog.active_model)) {
+      if (catalog.active_model && formattedList.some(
+        m => m.id === catalog.active_model && m.is_available,
+      )) {
         setActiveModel(catalog.active_model);
-      } else if (formattedList.length > 0 && !formattedList.some(m => m.id === activeModel)) {
+      } else if (
+        formattedList.length > 0 &&
+        !formattedList.some(m => m.id === activeModel && m.is_available)
+      ) {
         const firstAvailable = formattedList.find(m => m.is_available) || formattedList[0];
         setActiveModel(firstAvailable.id);
       }

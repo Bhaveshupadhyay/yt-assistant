@@ -229,9 +229,13 @@ class ArtifactStreamParser:
                     "artifact_type": self.current_type.value,
                     "artifact_title": self.current_title,
                 }
-            elif "<artifact" in self.buffer.lower() or "<antartifact" in self.buffer.lower():
-                # Incomplete start tag, buffer without emitting yet
-                return {"type": "none", "content": ""}
+            # Check if buffer ends with a potential opening tag prefix (e.g. "<", "<art", "<artifact type=...")
+            potential_open = re.search(r'<(?:artifact|antartifact)[^>]*$', self.buffer, re.I) or re.search(r'<[a-z]{0,11}$', self.buffer, re.I)
+            if potential_open:
+                prefix_start = potential_open.start()
+                to_emit = self.buffer[:prefix_start]
+                self.buffer = self.buffer[prefix_start:]
+                return {"type": "text_delta", "content": to_emit} if to_emit else {"type": "none", "content": ""}
             else:
                 to_emit = self.buffer
                 self.buffer = ""
@@ -261,6 +265,15 @@ class ArtifactStreamParser:
                     "content": artifact_chunk,
                     "artifact": artifact,
                 }
+            
+            # Check if buffer ends with a potential closing tag prefix (e.g. "</", "</art", "</artifact")
+            potential_close = re.search(r'</(?:artifact|antartifact)?[^>]*$', self.buffer, re.I) or re.search(r'</[a-z]{0,11}$', self.buffer, re.I)
+            if potential_close:
+                prefix_start = potential_close.start()
+                delta = self.buffer[:prefix_start]
+                self.artifact_content_buffer += delta
+                self.buffer = self.buffer[prefix_start:]
+                return {"type": "artifact_delta", "content": delta} if delta else {"type": "none", "content": ""}
             else:
                 # Inside artifact content, buffer and emit artifact delta
                 delta = self.buffer

@@ -177,3 +177,43 @@ def test_artifact_stream_parser_ant_artifact_flow() -> None:
     assert art.title == "Ada Chen on Quitting"
     assert art.artifact_type == ArtifactType.MARKDOWN
     assert "# The Curiosity Loop" in art.content
+
+
+def test_artifact_stream_parser_split_tokens() -> None:
+    """Test ArtifactStreamParser when opening and closing tags are fragmented across tokens."""
+    stream_parser = ArtifactStreamParser()
+
+    token_sequence = [
+        "Executive ",
+        "summary:\n\n",
+        "<",
+        "arti",
+        'fact type="markdown" title="Split Tag Test">',
+        "\n# Content Line 1\n",
+        "Content Line 2\n",
+        "</",
+        "arti",
+        "fact>",
+        "\n\nFooter note.",
+    ]
+
+    events = []
+    for tok in token_sequence:
+        event = stream_parser.feed_token(tok)
+        events.append(event)
+
+    completed_artifacts = stream_parser.finalize()
+    assert len(completed_artifacts) == 1
+    art = completed_artifacts[0]
+    assert art.title == "Split Tag Test"
+    assert art.artifact_type == ArtifactType.MARKDOWN
+    assert "# Content Line 1" in art.content
+    assert "Content Line 2" in art.content
+
+    # Check that tag fragments were not emitted as text_delta
+    text_deltas = [e["content"] for e in events if e["type"] == "text_delta"]
+    full_text_delta = "".join(text_deltas)
+    assert "<arti" not in full_text_delta
+    assert "</arti" not in full_text_delta
+    assert "Executive summary:" in full_text_delta
+    assert "Footer note." in full_text_delta

@@ -263,6 +263,9 @@ class TranscriptChunker:
         ts_only_pattern = re.compile(
             r"^\(([0-9]{1,2}:[0-9]{2}:[0-9]{2}|[0-9]{1,2}:[0-9]{2})\)\s*:\s*(.*)$"
         )
+        speaker_only_pattern = re.compile(
+            r"^([A-Z][A-Za-z0-9\s\.\-'\u2019]{1,40})\s*:\s*(.*)$"
+        )
 
         lines = body.split("\n")
         turns: list[dict[str, Any]] = []
@@ -277,6 +280,7 @@ class TranscriptChunker:
 
             m1 = speaker_ts_pattern.match(line_str)
             m2 = ts_only_pattern.match(line_str)
+            m3 = speaker_only_pattern.match(line_str) if not m1 and not m2 else None
 
             if m1:
                 if current_text_lines:
@@ -303,6 +307,17 @@ class TranscriptChunker:
                 current_ts = f"00:{raw_ts}" if len(raw_ts) == 5 else raw_ts
                 if m2.group(2).strip():
                     current_text_lines.append(m2.group(2).strip())
+            elif m3 and not m3.group(1).lower().startswith(("http", "note", "timestamp", "url", "source", "step", "part")):
+                if current_text_lines:
+                    turns.append({
+                        "speaker": current_speaker,
+                        "timestamp": current_ts,
+                        "text": "\n".join(current_text_lines),
+                    })
+                    current_text_lines = []
+                current_speaker = m3.group(1).strip()
+                if m3.group(2).strip():
+                    current_text_lines.append(m3.group(2).strip())
             else:
                 current_text_lines.append(line_str)
 

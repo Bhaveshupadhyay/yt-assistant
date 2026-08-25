@@ -124,7 +124,7 @@ export const MessageItem: React.FC<MessageItemProps> = ({
                     {message.artifact?.title || 'Interactive Artifact Generated'}
                   </div>
                   <div className="flex items-center gap-2 text-muted text-[11px] mt-0.5">
-                    <span className="uppercase font-mono font-medium px-1.5 py-0.2 rounded bg-surface border border-border">
+                    <span className="uppercase font-mono font-medium px-1.5 py-0.5 rounded bg-surface border border-border">
                       {artifactType}
                     </span>
                     <span>Click to open in side panel</span>

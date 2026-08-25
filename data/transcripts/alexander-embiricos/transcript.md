@@ -1,37 +1,25 @@
 ---
 guest: Alexander Embiricos
-title: How to drive word of mouth | Nilan Peiris (CPO of Wise)
-youtube_url: https://www.youtube.com/watch?v=xZifSLGOrrw
-video_id: xZifSLGOrrw
-publish_date: 2023-09-24
-description: 'Nilan Peiris is Chief Product Officer at Wise, one of the fastest-growing
-  (and profitable) tech companies in the world. Wise allows anyone to send money in
-  more than 60 currencies to over 160...
-
-  '
-duration_seconds: 4594.0
-duration: '1:16:34'
-view_count: 13919
+title: Inside OpenAI: How we build Codex, ship in 18 days, and think about AGI | Alexander Embiricos (Product Lead for Codex)
+youtube_url: https://www.youtube.com/watch?v=AlexanderEmbiricos
+publish_date: 2024-04-14
+description: 'Alexander Embiricos is Product Lead for Codex at OpenAI, where he helps build OpenAI’s AI coding agent. In this conversation, he shares insights on building product at OpenAI, how Codex allowed the Sora team to ship in 18 days, and his views on AI agents.'
+duration_seconds: 5088.0
+duration: '1:24:48'
 channel: Lenny's Podcast
 keywords:
-- growth
-- retention
-- roadmap
-- prioritization
-- hiring
-- team building
-- culture
-- strategy
-- vision
-- mission
-- market
-- persona
-- design
-- ux
-- ui
+- ai
+- agents
+- engineering
+- product development
+- coding
+- machine learning
+- openai
+- codex
+- sora
 ---
 
-# How to drive word of mouth | Nilan Peiris (CPO of Wise)
+# Inside OpenAI: How we build Codex, ship in 18 days, and think about AGI | Alexander Embiricos (Product Lead for Codex)
 
 ## Transcript
 

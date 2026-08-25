@@ -229,3 +229,33 @@ def test_find_default_transcripts_dir_respects_settings(tmp_path: Path) -> None:
 
     resolved = find_default_transcripts_dir(custom_settings)
     assert resolved == custom_dir.resolve()
+
+
+def test_parse_markdown_transcript_untimestamped_speakers(tmp_path: Path) -> None:
+    """Test _parse_markdown_transcript parses speaker turns without timestamps."""
+    chunker = TranscriptChunker()
+    md_content = """---
+guest: Adriel Frederick
+title: Humanizing product development
+---
+
+# Title
+
+## Transcript
+
+Adriel Frederick:
+Here is my opening thought on algorithmic product management.
+
+Lenny:
+Welcome to the podcast. Tell us about Facebook.
+"""
+    md_file = tmp_path / "transcript.md"
+    md_file.write_text(md_content, encoding="utf-8")
+
+    meta, turns = chunker._parse_markdown_transcript(md_content, md_file)
+    assert meta.guest_name == "Adriel Frederick"
+    assert len(turns) == 2
+    assert turns[0]["speaker"] == "Adriel Frederick"
+    assert "algorithmic product management" in turns[0]["text"]
+    assert turns[1]["speaker"] == "Lenny"
+    assert "Tell us about Facebook" in turns[1]["text"]

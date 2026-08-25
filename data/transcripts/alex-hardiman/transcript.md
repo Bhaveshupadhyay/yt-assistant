@@ -1,5 +1,5 @@
 ---
-guest: Alex Hardimen
+guest: Alex Hardiman
 title: An inside look at how the New York Times builds product | Alex Hardiman (CPO,
   the New York Times)
 youtube_url: https://www.youtube.com/watch?v=y3-cwoHMwQs

@@ -27,6 +27,22 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
   const [copied, setCopied] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
+  // Handle ESC key to exit fullscreen or close panel (hook declared before any early return)
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isFullscreen, onClose]);
+
   if (!isOpen || !artifact) return null;
 
   const handleCopy = async () => {
@@ -40,21 +56,6 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
   const artifactType = artifact.artifactType || artifact.artifact_type || 'html';
   const isMarkdown = artifactType === 'markdown';
   const isSvg = artifactType === 'svg';
-
-  // Handle ESC key to exit fullscreen or close panel
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (isFullscreen) {
-          setIsFullscreen(false);
-        } else {
-          onClose();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isFullscreen, onClose]);
 
   const handleDownload = () => {
     const ext = isMarkdown ? 'md' : isSvg ? 'svg' : 'html';
@@ -208,16 +209,13 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
                 {artifact.content}
               </ReactMarkdown>
             </div>
-          ) : isSvg ? (
-            <div className="w-full h-full flex items-center justify-center p-6 overflow-auto bg-white dark:bg-slate-950">
-              <div
-                className="max-w-full max-h-full"
-                dangerouslySetInnerHTML={{ __html: artifact.content }}
-              />
-            </div>
           ) : (
             <SandboxedIframe
-              content={artifact.content}
+              content={
+                isSvg
+                  ? `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:${isDark ? '#020817' : '#ffffff'};overflow:auto;}svg{max-width:100%;height:auto;}</style></head><body>${artifact.content}</body></html>`
+                  : artifact.content
+              }
               title={artifact.title}
               isDark={isDark}
             />
