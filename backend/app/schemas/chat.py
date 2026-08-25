@@ -49,6 +49,7 @@ class ChatDonePayload(BaseModel):
     model_used: str = Field(..., description="Model identifier used for generation")
     citations_count: int = Field(default=0, description="Number of grounded citations")
     has_artifact: bool = Field(default=False, description="Whether an artifact was generated and persisted")
+    content: str | None = Field(default=None, description="Final cleaned assistant message content")
     finish_reason: str = Field(default="stop", description="Stream completion reason")
 
 

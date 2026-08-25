@@ -45,7 +45,7 @@ def get_resilient_qdrant_client(
         client = QdrantClient(
             url=target_url,
             api_key=settings.QDRANT_API_KEY,
-            timeout=2.0,
+            timeout=120.0,
             check_compatibility=False,
         )
         # Test connection
@@ -57,7 +57,7 @@ def get_resilient_qdrant_client(
             f"Could not connect to Qdrant server at '{target_url}' ({exc}). "
             "Falling back to local disk storage in 'data/qdrant_storage' for offline persistence."
         )
-        default_local_dir = Path("data/qdrant_storage").resolve()
+        default_local_dir = Path("../data/qdrant_storage").resolve() if Path("../data").exists() else Path("data/qdrant_storage").resolve()
         default_local_dir.mkdir(parents=True, exist_ok=True)
         return QdrantClient(path=str(default_local_dir)), f"Local Embedded Fallback ({default_local_dir})"
 

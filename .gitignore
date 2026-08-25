@@ -45,6 +45,7 @@ htmlcov/
 *.sqlite3
 lenny_assistant.db
 qdrant_storage/
+backend/data/
 
 # Environment variables
 .env

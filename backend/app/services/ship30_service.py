@@ -51,7 +51,10 @@ class Ship30Service:
             "   - Explicitly cite the Guest Name and Episode Title (e.g., Elena Verna in 'B2B Growth & PLG').\n\n"
             "6. ACTIONABLE 3-STEP CLOSING CHECKLIST:\n"
             "   - Conclude the essay with a dedicated section: `### 3-Step Action Checklist for Tomorrow Morning`.\n"
-            "   - Provide 3 concrete, numbered, immediate action items that a PM, Growth Lead, or Founder can execute right away."
+            "   - Provide 3 concrete, numbered, immediate action items that a PM, Growth Lead, or Founder can execute right away.\n\n"
+            "7. ARTIFACT PACKAGING:\n"
+            "   - Encapsulate the full completed essay inside `<artifact type=\"markdown\" title=\"Ship 30: [Topic]\">` tags.\n"
+            "   - Provide a 1-sentence executive summary before opening the `<artifact>` tag."
         )
 
     def build_ship30_user_prompt(

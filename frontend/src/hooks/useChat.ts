@@ -98,12 +98,13 @@ export function useChat(
               onArtifactGenerated?.(artifact);
             },
             onDone: (_donePayload) => {
+              const finalContent = _donePayload?.content || accumulatedContent;
               setMessages(prev =>
                 prev.map(m =>
                   m.id === assistantMsgId
                     ? {
                         ...m,
-                        content: accumulatedContent,
+                        content: finalContent,
                         citations: accumulatedCitations,
                         hasArtifact: Boolean(latestArtifact),
                         artifact: latestArtifact,

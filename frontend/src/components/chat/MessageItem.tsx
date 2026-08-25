@@ -111,24 +111,36 @@ export const MessageItem: React.FC<MessageItemProps> = ({
 
           {/* Artifact Attached CTA */}
           {(message.hasArtifact || message.artifact) && (
-            <div className="mt-3 p-3 rounded-xl bg-secondary/10 border border-secondary/30 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2 text-xs">
-                <Layout className="w-4 h-4 text-secondary flex-shrink-0" />
-                <div>
-                  <span className="font-medium text-foreground">
+            <div
+              onClick={() => message.artifact && onOpenArtifact?.(message.artifact)}
+              className="mt-3 p-3.5 rounded-xl bg-gradient-to-r from-secondary/15 via-secondary/10 to-primary/10 border border-secondary/30 hover:border-secondary/50 flex items-center justify-between gap-3 cursor-pointer group transition-all duration-200 shadow-xs hover:shadow-md"
+            >
+              <div className="flex items-center gap-2.5 text-xs min-w-0">
+                <div className="p-2 rounded-lg bg-secondary/20 text-secondary group-hover:scale-105 transition-transform flex-shrink-0">
+                  <Layout className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-foreground truncate group-hover:text-secondary transition-colors">
                     {message.artifact?.title || 'Interactive Artifact Generated'}
-                  </span>
-                  <span className="text-muted ml-2 text-[11px] uppercase font-mono">
-                    [{artifactType}]
-                  </span>
+                  </div>
+                  <div className="flex items-center gap-2 text-muted text-[11px] mt-0.5">
+                    <span className="uppercase font-mono font-medium px-1.5 py-0.2 rounded bg-surface border border-border">
+                      {artifactType}
+                    </span>
+                    <span>Click to open in side panel</span>
+                  </div>
                 </div>
               </div>
               <button
-                onClick={() => message.artifact && onOpenArtifact?.(message.artifact)}
-                className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-secondary text-white text-xs font-semibold hover:bg-secondary-hover transition-colors shadow-sm"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  message.artifact && onOpenArtifact?.(message.artifact);
+                }}
+                className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-secondary text-white text-xs font-semibold hover:bg-secondary-hover transition-all shadow-xs group-hover:shadow-sm flex-shrink-0"
               >
                 <span>View Panel</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
           )}

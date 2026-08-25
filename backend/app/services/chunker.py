@@ -217,6 +217,107 @@ class TranscriptChunker:
 
         return chunks
 
+    def _parse_markdown_transcript(
+        self, content_raw: str, path: Path
+    ) -> tuple[TranscriptMetadata, list[dict[str, Any]]]:
+        """Parse markdown transcript with YAML frontmatter and dialogue timestamps."""
+        meta: dict[str, Any] = {}
+        body = content_raw
+
+        if content_raw.startswith("---"):
+            parts = content_raw.split("---", 2)
+            if len(parts) >= 3:
+                try:
+                    import yaml
+
+                    meta = yaml.safe_load(parts[1]) or {}
+                    body = parts[2]
+                except Exception as exc:
+                    logger.warning(f"Could not parse YAML frontmatter in {path.name}: {exc}")
+
+        # Fallback metadata from directory structure or filename
+        folder_slug = path.parent.name if path.name.lower() in ("transcript.md", "transcripts.md") else path.stem
+        guest_name = meta.get("guest") or "Lenny Rachitsky"
+        title = meta.get("title") or folder_slug.replace("-", " ").replace("_", " ").title()
+        url = meta.get("youtube_url") or ""
+        pub_date = str(meta.get("publish_date")) if meta.get("publish_date") else None
+        summary = meta.get("description") or None
+        keywords = meta.get("keywords") or []
+        topic = ", ".join(keywords[:3]) if isinstance(keywords, list) and keywords else "Product & Growth"
+
+        metadata = TranscriptMetadata(
+            episode_id=folder_slug,
+            episode_title=title,
+            guest_name=guest_name,
+            guest_role="Guest" if guest_name != "Lenny Rachitsky" else "Host",
+            topic=topic,
+            url=url,
+            publication_date=pub_date,
+            summary=summary,
+            key_takeaways=[],
+        )
+
+        speaker_ts_pattern = re.compile(
+            r"^([A-Za-z0-9\s\.\-'\u2019]+?)\s*\(([0-9]{1,2}:[0-9]{2}:[0-9]{2}|[0-9]{1,2}:[0-9]{2})\)\s*:\s*(.*)$"
+        )
+        ts_only_pattern = re.compile(
+            r"^\(([0-9]{1,2}:[0-9]{2}:[0-9]{2}|[0-9]{1,2}:[0-9]{2})\)\s*:\s*(.*)$"
+        )
+
+        lines = body.split("\n")
+        turns: list[dict[str, Any]] = []
+        current_speaker = guest_name
+        current_ts = "00:00:00"
+        current_text_lines: list[str] = []
+
+        for line in lines:
+            line_str = line.strip()
+            if not line_str or line_str.startswith("#"):
+                continue
+
+            m1 = speaker_ts_pattern.match(line_str)
+            m2 = ts_only_pattern.match(line_str)
+
+            if m1:
+                if current_text_lines:
+                    turns.append({
+                        "speaker": current_speaker,
+                        "timestamp": current_ts,
+                        "text": "\n".join(current_text_lines),
+                    })
+                    current_text_lines = []
+                current_speaker = m1.group(1).strip()
+                raw_ts = m1.group(2).strip()
+                current_ts = f"00:{raw_ts}" if len(raw_ts) == 5 else raw_ts
+                if m1.group(3).strip():
+                    current_text_lines.append(m1.group(3).strip())
+            elif m2:
+                if current_text_lines:
+                    turns.append({
+                        "speaker": current_speaker,
+                        "timestamp": current_ts,
+                        "text": "\n".join(current_text_lines),
+                    })
+                    current_text_lines = []
+                raw_ts = m2.group(1).strip()
+                current_ts = f"00:{raw_ts}" if len(raw_ts) == 5 else raw_ts
+                if m2.group(2).strip():
+                    current_text_lines.append(m2.group(2).strip())
+            else:
+                current_text_lines.append(line_str)
+
+        if current_text_lines:
+            turns.append({
+                "speaker": current_speaker,
+                "timestamp": current_ts,
+                "text": "\n".join(current_text_lines),
+            })
+
+        if not turns:
+            turns = [{"speaker": guest_name, "text": body.strip(), "timestamp": "00:00:00"}]
+
+        return metadata, turns
+
     def chunk_file(self, file_path: Path | str) -> list[TranscriptChunk]:
         """Load and chunk a single transcript file (JSON or text/markdown)."""
         path = Path(file_path)
@@ -248,17 +349,8 @@ class TranscriptChunker:
             else:
                 raise ValueError(f"Invalid or empty transcript format in {path.name}")
         else:
-            metadata = TranscriptMetadata(
-                episode_id=path.stem,
-                episode_title=path.stem.replace("_", " ").title(),
-                guest_name="Lenny Rachitsky",
-                guest_role="Host",
-                topic="Product & Growth",
-                url="",
-            )
-            return self.chunk_structured_transcript(
-                metadata, [{"speaker": "Speaker", "text": content_raw, "timestamp": "00:00:00"}]
-            )
+            metadata, turns = self._parse_markdown_transcript(content_raw, path)
+            return self.chunk_structured_transcript(metadata, turns)
 
     def chunk_directory(self, dir_path: Path | str, strict: bool = True) -> list[TranscriptChunk]:
         """Recursively scan and chunk all transcript files in a directory.
