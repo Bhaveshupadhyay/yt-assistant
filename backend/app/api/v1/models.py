@@ -28,6 +28,27 @@ SUPPORTED_MODELS_CATALOG = [
         "description": "State-of-the-art hybrid reasoning, coding, and synthesis model (Cloud).",
     },
     {
+        "id": ModelName.GEMINI_2_0_FLASH.value,
+        "name": "Gemini 2.0 Flash",
+        "provider": ModelProvider.GEMINI,
+        "is_cloud": True,
+        "description": "Next-gen multimodal speed and reasoning with 1M+ context window (Cloud).",
+    },
+    {
+        "id": ModelName.GEMINI_1_5_PRO.value,
+        "name": "Gemini 1.5 Pro",
+        "provider": ModelProvider.GEMINI,
+        "is_cloud": True,
+        "description": "Google flagship model with deep cross-modal reasoning and 2M token context (Cloud).",
+    },
+    {
+        "id": ModelName.GEMINI_1_5_FLASH.value,
+        "name": "Gemini 1.5 Flash",
+        "provider": ModelProvider.GEMINI,
+        "is_cloud": True,
+        "description": "High-speed, low-latency Google model optimized for quick factual Q&A (Cloud).",
+    },
+    {
         "id": ModelName.GPT_4O.value,
         "name": "GPT-4o",
         "provider": ModelProvider.OPENAI,
@@ -84,6 +105,7 @@ async def list_models(
     """Retrieve the currently active model, supported model list, and provider connectivity."""
     anthropic_configured = bool(settings.ANTHROPIC_API_KEY)
     openai_configured = bool(settings.OPENAI_API_KEY)
+    gemini_configured = bool(settings.GEMINI_API_KEY)
 
     # Check Ollama connectivity
     ollama_connected = False
@@ -97,6 +119,8 @@ async def list_models(
     # Determine default active model
     if anthropic_configured:
         active_model = ModelName.CLAUDE_3_5_SONNET.value
+    elif gemini_configured:
+        active_model = ModelName.GEMINI_2_0_FLASH.value
     elif openai_configured:
         active_model = ModelName.GPT_4O.value
     else:
@@ -112,6 +136,8 @@ async def list_models(
             is_available = anthropic_configured
         elif provider == ModelProvider.OPENAI:
             is_available = openai_configured
+        elif provider == ModelProvider.GEMINI:
+            is_available = gemini_configured
         elif provider == ModelProvider.OLLAMA:
             is_available = ollama_connected
         else:
@@ -132,6 +158,11 @@ async def list_models(
         ModelProvider.ANTHROPIC.value: ProviderStatus(
             name="Anthropic Claude",
             configured=anthropic_configured,
+            connected=None,
+        ),
+        ModelProvider.GEMINI.value: ProviderStatus(
+            name="Google Gemini",
+            configured=gemini_configured,
             connected=None,
         ),
         ModelProvider.OPENAI.value: ProviderStatus(

@@ -45,6 +45,8 @@ def test_resolve_provider_for_model():
     """Verify correct provider mapping for various model families."""
     assert resolve_provider_for_model("claude-3-5-sonnet") == ModelProvider.ANTHROPIC
     assert resolve_provider_for_model("claude-3-7-sonnet") == ModelProvider.ANTHROPIC
+    assert resolve_provider_for_model("gemini-2.0-flash") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-1.5-pro") == ModelProvider.GEMINI
     assert resolve_provider_for_model("gpt-4o") == ModelProvider.OPENAI
     assert resolve_provider_for_model("gpt-4o-mini") == ModelProvider.OPENAI
     assert resolve_provider_for_model("llama3.2") == ModelProvider.OLLAMA
@@ -55,15 +57,22 @@ def test_resolve_provider_for_model():
 
 def test_get_llm_client_factory_switching():
     """Verify get_llm_client instantiates correct client class based on model name."""
+    from app.services.llm.gemini_client import GeminiClient
+
     settings = Settings(
         ANTHROPIC_API_KEY="test-anthropic-key",
         OPENAI_API_KEY="test-openai-key",
-        OLLAMA_BASE_URL="http://localhost:11434",
+        GEMINI_API_KEY="test-gemini-key",
+        OLLAMA_MODEL="llama3.2",
     )
 
     client_claude = get_llm_client(model_name=ModelName.CLAUDE_3_5_SONNET, settings=settings)
     assert isinstance(client_claude, AnthropicClient)
     assert client_claude.provider == ModelProvider.ANTHROPIC
+
+    client_gemini = get_llm_client(model_name=ModelName.GEMINI_2_0_FLASH, settings=settings)
+    assert isinstance(client_gemini, GeminiClient)
+    assert client_gemini.provider == ModelProvider.GEMINI
 
     client_openai = get_llm_client(model_name=ModelName.GPT_4O, settings=settings)
     assert isinstance(client_openai, OpenAIClient)

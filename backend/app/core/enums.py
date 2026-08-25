@@ -24,6 +24,7 @@ class ModelProvider(StrEnum):
 
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
+    GEMINI = "gemini"
     OLLAMA = "ollama"
 
 
@@ -34,6 +35,9 @@ class ModelName(StrEnum):
     CLAUDE_3_7_SONNET = "claude-3-7-sonnet"
     GPT_4O = "gpt-4o"
     GPT_4O_MINI = "gpt-4o-mini"
+    GEMINI_2_0_FLASH = "gemini-2.0-flash"
+    GEMINI_1_5_PRO = "gemini-1.5-pro"
+    GEMINI_1_5_FLASH = "gemini-1.5-flash"
     LLAMA_3_2 = "llama3.2"
     MISTRAL = "mistral"
     QWEN_2_5 = "qwen2.5"
