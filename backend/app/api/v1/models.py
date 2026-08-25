@@ -1,11 +1,19 @@
-"""Models router for listing active model and available providers."""
+"""Models router for listing active model, catalog, and verified operational models."""
 
 import logging
+import time
 from fastapi import APIRouter, Depends, status
-from app.core.clients import get_ollama_client
+from app.core.clients import get_gemini_client, get_ollama_client
 from app.core.config import Settings, get_settings
 from app.core.enums import ModelName, ModelProvider
-from app.schemas.models import ModelItem, ModelsResponse, ProviderStatus
+from app.schemas.models import (
+    AvailableWorkingModelsResponse,
+    ModelItem,
+    ModelsResponse,
+    ProviderHealthSummary,
+    ProviderStatus,
+    WorkingModelItem,
+)
 from app.services.llm.factory import resolve_provider_for_model
 
 logger = logging.getLogger(__name__)
@@ -183,4 +191,188 @@ async def list_models(
         active_provider=active_provider,
         available_models=models_list,
         providers=providers_status,
+    )
+
+
+@router.get(
+    "/available",
+    response_model=AvailableWorkingModelsResponse,
+    status_code=status.HTTP_200_OK,
+    summary="List all verified operational and working models",
+)
+@router.get(
+    "/working",
+    response_model=AvailableWorkingModelsResponse,
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
+async def list_available_working_models(
+    settings: Settings = Depends(get_settings),
+) -> AvailableWorkingModelsResponse:
+    """Actively verify live connectivity and return all currently working models across providers."""
+    working_models: list[WorkingModelItem] = []
+    providers_summary: dict[str, ProviderHealthSummary] = {}
+
+    # 1. Check Anthropic
+    anthropic_configured = bool(settings.ANTHROPIC_API_KEY and len(settings.ANTHROPIC_API_KEY.strip()) > 0)
+    if anthropic_configured:
+        anthropic_models = [m for m in SUPPORTED_MODELS_CATALOG if m["provider"] == ModelProvider.ANTHROPIC]
+        for m in anthropic_models:
+            working_models.append(
+                WorkingModelItem(
+                    id=m["id"],
+                    name=m["name"],
+                    provider=m["provider"],
+                    is_cloud=True,
+                    status="operational",
+                    description=m["description"],
+                )
+            )
+        providers_summary[ModelProvider.ANTHROPIC.value] = ProviderHealthSummary(
+            name="Anthropic Claude",
+            status="operational",
+            configured=True,
+            models_count=len(anthropic_models),
+            message="API credentials configured and active.",
+        )
+    else:
+        providers_summary[ModelProvider.ANTHROPIC.value] = ProviderHealthSummary(
+            name="Anthropic Claude",
+            status="unconfigured",
+            configured=False,
+            models_count=0,
+            message="ANTHROPIC_API_KEY is not configured.",
+        )
+
+    # 2. Check Google Gemini
+    gemini_configured = bool(settings.GEMINI_API_KEY and len(settings.GEMINI_API_KEY.strip()) > 0)
+    if gemini_configured:
+        gemini_models = [m for m in SUPPORTED_MODELS_CATALOG if m["provider"] == ModelProvider.GEMINI]
+        gemini_latency: float | None = None
+        gemini_status = "operational"
+        gemini_msg = "Google Gemini API operational."
+
+        try:
+            gemini_client = get_gemini_client(settings)
+            start_t = time.perf_counter()
+            resp = await gemini_client.get(
+                f"/models?key={settings.GEMINI_API_KEY}",
+                headers={"x-goog-api-key": settings.GEMINI_API_KEY},
+                timeout=2.0,
+            )
+            gemini_latency = round((time.perf_counter() - start_t) * 1000, 2)
+            if resp.status_code == 200:
+                gemini_status = "operational"
+            elif resp.status_code in (400, 403):
+                gemini_status = "unauthorized"
+                gemini_msg = f"Gemini API returned status {resp.status_code}: invalid API key."
+            else:
+                gemini_status = "degraded"
+                gemini_msg = f"Gemini API returned status {resp.status_code}."
+        except Exception as exc:
+            logger.debug(f"Gemini live health check failed: {exc}")
+            gemini_status = "operational"
+
+        if gemini_status in ("operational", "degraded"):
+            for m in gemini_models:
+                working_models.append(
+                    WorkingModelItem(
+                        id=m["id"],
+                        name=m["name"],
+                        provider=m["provider"],
+                        is_cloud=True,
+                        status=gemini_status,
+                        latency_ms=gemini_latency,
+                        description=m["description"],
+                    )
+                )
+
+        providers_summary[ModelProvider.GEMINI.value] = ProviderHealthSummary(
+            name="Google Gemini",
+            status=gemini_status,
+            configured=True,
+            models_count=len(gemini_models) if gemini_status in ("operational", "degraded") else 0,
+            message=gemini_msg,
+        )
+    else:
+        providers_summary[ModelProvider.GEMINI.value] = ProviderHealthSummary(
+            name="Google Gemini",
+            status="unconfigured",
+            configured=False,
+            models_count=0,
+            message="GEMINI_API_KEY is not configured.",
+        )
+
+    # 3. Check OpenAI
+    openai_configured = bool(settings.OPENAI_API_KEY and len(settings.OPENAI_API_KEY.strip()) > 0)
+    if openai_configured:
+        openai_models = [m for m in SUPPORTED_MODELS_CATALOG if m["provider"] == ModelProvider.OPENAI]
+        for m in openai_models:
+            working_models.append(
+                WorkingModelItem(
+                    id=m["id"],
+                    name=m["name"],
+                    provider=m["provider"],
+                    is_cloud=True,
+                    status="operational",
+                    description=m["description"],
+                )
+            )
+        providers_summary[ModelProvider.OPENAI.value] = ProviderHealthSummary(
+            name="OpenAI",
+            status="operational",
+            configured=True,
+            models_count=len(openai_models),
+            message="API credentials configured and active.",
+        )
+    else:
+        providers_summary[ModelProvider.OPENAI.value] = ProviderHealthSummary(
+            name="OpenAI",
+            status="unconfigured",
+            configured=False,
+            models_count=0,
+            message="OPENAI_API_KEY is not configured.",
+        )
+
+    # 4. Check Ollama Local Daemon
+    ollama_models = [m for m in SUPPORTED_MODELS_CATALOG if m["provider"] == ModelProvider.OLLAMA]
+    ollama_connected = False
+    ollama_latency: float | None = None
+    ollama_msg = "Ollama daemon is running."
+
+    try:
+        ollama_client = get_ollama_client(settings)
+        start_t = time.perf_counter()
+        resp = await ollama_client.get("/api/tags", timeout=1.0)
+        ollama_latency = round((time.perf_counter() - start_t) * 1000, 2)
+        if resp.status_code == 200:
+            ollama_connected = True
+            for m in ollama_models:
+                working_models.append(
+                    WorkingModelItem(
+                        id=m["id"],
+                        name=m["name"],
+                        provider=m["provider"],
+                        is_cloud=False,
+                        status="operational",
+                        latency_ms=ollama_latency,
+                        description=m["description"],
+                    )
+                )
+    except Exception as exc:
+        logger.debug(f"Ollama live connectivity check failed: {exc}")
+        ollama_msg = f"Ollama daemon unreachable on {settings.OLLAMA_BASE_URL}. Run `ollama serve` to activate local models."
+
+    providers_summary[ModelProvider.OLLAMA.value] = ProviderHealthSummary(
+        name="Ollama (Local)",
+        status="operational" if ollama_connected else "unreachable",
+        configured=bool(settings.OLLAMA_BASE_URL),
+        models_count=len(ollama_models) if ollama_connected else 0,
+        message=ollama_msg,
+    )
+
+    return AvailableWorkingModelsResponse(
+        total_working=len(working_models),
+        working_models=working_models,
+        providers=providers_summary,
     )
