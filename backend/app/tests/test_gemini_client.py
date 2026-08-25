@@ -43,7 +43,7 @@ async def test_gemini_client_streaming_success() -> None:
     mock_transport = httpx.MockTransport(mock_handler)
     async with httpx.AsyncClient(transport=mock_transport, base_url="https://generativelanguage.googleapis.com/v1beta") as http_client:
         client = GeminiClient(
-            model_name=ModelName.GEMINI_2_0_FLASH,
+            model_name=ModelName.GEMINI_3_6_FLASH,
             api_key="test-gemini-key",
             http_client=http_client,
         )
@@ -73,7 +73,7 @@ async def test_gemini_client_acomplete() -> None:
     )
     async with httpx.AsyncClient(transport=mock_transport, base_url="https://generativelanguage.googleapis.com/v1beta") as http_client:
         client = GeminiClient(
-            model_name=ModelName.GEMINI_1_5_PRO,
+            model_name=ModelName.GEMINI_3_7_PRO,
             api_key="test-key",
             http_client=http_client,
         )
@@ -89,7 +89,7 @@ async def test_gemini_client_http_error_handling() -> None:
     )
     async with httpx.AsyncClient(transport=mock_transport, base_url="https://generativelanguage.googleapis.com/v1beta") as http_client:
         client = GeminiClient(
-            model_name=ModelName.GEMINI_2_0_FLASH,
+            model_name=ModelName.GEMINI_3_6_FLASH,
             api_key="invalid-key",
             http_client=http_client,
         )
@@ -102,7 +102,7 @@ async def test_gemini_client_http_error_handling() -> None:
 async def test_gemini_client_stream_error_payload() -> None:
     """Test GeminiClient raises ModelProviderException when stream emits an error object."""
     sse_lines = [
-        'data: {"error": {"message": "Quota exceeded for model gemini-2.0-flash"}}\n\n',
+        'data: {"error": {"message": "Quota exceeded for model gemini-3.6-flash"}}\n\n',
     ]
     raw_response = "".join(sse_lines).encode("utf-8")
 
@@ -111,7 +111,7 @@ async def test_gemini_client_stream_error_payload() -> None:
     )
     async with httpx.AsyncClient(transport=mock_transport, base_url="https://generativelanguage.googleapis.com/v1beta") as http_client:
         client = GeminiClient(
-            model_name=ModelName.GEMINI_2_0_FLASH,
+            model_name=ModelName.GEMINI_3_6_FLASH,
             api_key="test-key",
             http_client=http_client,
         )
@@ -122,16 +122,16 @@ async def test_gemini_client_stream_error_payload() -> None:
 
 def test_gemini_factory_routing() -> None:
     """Test factory router correctly identifies and instantiates GeminiClient."""
-    assert resolve_provider_for_model("gemini-2.0-flash") == ModelProvider.GEMINI
-    assert resolve_provider_for_model("gemini-1.5-pro") == ModelProvider.GEMINI
-    assert resolve_provider_for_model("gemini-1.5-flash") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.6-flash") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.6-flash-lite") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.7-pro") == ModelProvider.GEMINI
 
     test_settings = Settings(
         GEMINI_API_KEY="test-gemini-key",
         ANTHROPIC_API_KEY=None,
         OPENAI_API_KEY=None,
     )
-    client = get_llm_client("gemini-2.0-flash", settings=test_settings)
+    client = get_llm_client("gemini-3.6-flash", settings=test_settings)
     assert isinstance(client, GeminiClient)
     assert client.provider == ModelProvider.GEMINI
-    assert client.model_name == "gemini-2.0-flash"
+    assert client.model_name == "gemini-3.6-flash"

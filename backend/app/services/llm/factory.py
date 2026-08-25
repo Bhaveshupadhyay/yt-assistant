@@ -71,7 +71,7 @@ def get_llm_client(
         if cfg.ANTHROPIC_API_KEY:
             model_name = ModelName.CLAUDE_3_5_SONNET
         elif cfg.GEMINI_API_KEY:
-            model_name = ModelName.GEMINI_2_0_FLASH
+            model_name = ModelName.GEMINI_3_6_FLASH
         elif cfg.OPENAI_API_KEY:
             model_name = ModelName.GPT_4O
         else:

@@ -19,7 +19,7 @@ class GeminiClient(BaseLLMClient):
 
     def __init__(
         self,
-        model_name: str | ModelName = ModelName.GEMINI_2_0_FLASH,
+        model_name: str | ModelName = ModelName.GEMINI_3_6_FLASH,
         api_key: str | None = None,
         settings: Settings | None = None,
         http_client: httpx.AsyncClient | None = None,
@@ -29,7 +29,7 @@ class GeminiClient(BaseLLMClient):
         """Initialize GeminiClient.
 
         Args:
-            model_name: Gemini model identifier (e.g. 'gemini-2.0-flash', 'gemini-1.5-pro').
+            model_name: Gemini model identifier (e.g. 'gemini-3.6-flash', 'gemini-3.7-pro').
             api_key: Gemini API Key (defaults to settings.GEMINI_API_KEY).
             settings: Optional application settings.
             http_client: Optional pre-configured httpx.AsyncClient.

@@ -36,25 +36,25 @@ SUPPORTED_MODELS_CATALOG = [
         "description": "State-of-the-art hybrid reasoning, coding, and synthesis model (Cloud).",
     },
     {
-        "id": ModelName.GEMINI_2_0_FLASH.value,
-        "name": "Gemini 2.0 Flash",
+        "id": ModelName.GEMINI_3_6_FLASH.value,
+        "name": "Gemini 3.6 Flash",
         "provider": ModelProvider.GEMINI,
         "is_cloud": True,
-        "description": "Next-gen multimodal speed and reasoning with 1M+ context window (Cloud).",
+        "description": "Next-gen high-speed multimodal reasoning with massive context window (Cloud).",
     },
     {
-        "id": ModelName.GEMINI_1_5_PRO.value,
-        "name": "Gemini 1.5 Pro",
+        "id": ModelName.GEMINI_3_6_FLASH_LITE.value,
+        "name": "Gemini 3.6 Flash Lite",
         "provider": ModelProvider.GEMINI,
         "is_cloud": True,
-        "description": "Google flagship model with deep cross-modal reasoning and 2M token context (Cloud).",
+        "description": "Ultra-lightweight, low-latency Google model optimized for high-throughput tasks (Cloud).",
     },
     {
-        "id": ModelName.GEMINI_1_5_FLASH.value,
-        "name": "Gemini 1.5 Flash",
+        "id": ModelName.GEMINI_3_7_PRO.value,
+        "name": "Gemini 3.7 Pro",
         "provider": ModelProvider.GEMINI,
         "is_cloud": True,
-        "description": "High-speed, low-latency Google model optimized for quick factual Q&A (Cloud).",
+        "description": "Google flagship intelligence with frontier reasoning, coding, and synthesis (Cloud).",
     },
     {
         "id": ModelName.GPT_4O.value,
@@ -128,7 +128,7 @@ async def list_models(
     if anthropic_configured:
         active_model = ModelName.CLAUDE_3_5_SONNET.value
     elif gemini_configured:
-        active_model = ModelName.GEMINI_2_0_FLASH.value
+        active_model = ModelName.GEMINI_3_6_FLASH.value
     elif openai_configured:
         active_model = ModelName.GPT_4O.value
     else:

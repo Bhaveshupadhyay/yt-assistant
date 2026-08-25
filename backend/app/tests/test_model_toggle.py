@@ -45,8 +45,9 @@ def test_resolve_provider_for_model():
     """Verify correct provider mapping for various model families."""
     assert resolve_provider_for_model("claude-3-5-sonnet") == ModelProvider.ANTHROPIC
     assert resolve_provider_for_model("claude-3-7-sonnet") == ModelProvider.ANTHROPIC
-    assert resolve_provider_for_model("gemini-2.0-flash") == ModelProvider.GEMINI
-    assert resolve_provider_for_model("gemini-1.5-pro") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.6-flash") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.6-flash-lite") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.7-pro") == ModelProvider.GEMINI
     assert resolve_provider_for_model("gpt-4o") == ModelProvider.OPENAI
     assert resolve_provider_for_model("gpt-4o-mini") == ModelProvider.OPENAI
     assert resolve_provider_for_model("llama3.2") == ModelProvider.OLLAMA
@@ -70,7 +71,7 @@ def test_get_llm_client_factory_switching():
     assert isinstance(client_claude, AnthropicClient)
     assert client_claude.provider == ModelProvider.ANTHROPIC
 
-    client_gemini = get_llm_client(model_name=ModelName.GEMINI_2_0_FLASH, settings=settings)
+    client_gemini = get_llm_client(model_name=ModelName.GEMINI_3_6_FLASH, settings=settings)
     assert isinstance(client_gemini, GeminiClient)
     assert client_gemini.provider == ModelProvider.GEMINI
 
