@@ -19,7 +19,7 @@ from app.core.dependencies import (
     get_session_repository,
     get_ship30_service,
 )
-from app.core.enums import MessageRole
+from app.core.enums import MessageRole, ModelProvider
 from app.core.exceptions import (
     AppException,
     OllamaUnavailableException,
@@ -89,6 +89,18 @@ async def stream_chat(
     target_model = payload.model or session.model_used or settings.OLLAMA_MODEL
     provider = resolve_provider_for_model(target_model)
 
+    # Preflight provider health check before opening SSE stream
+    llm_client = get_llm_client(model_name=target_model, settings=settings)
+    if provider == ModelProvider.OLLAMA:
+        is_healthy = await llm_client.check_health()
+        if not is_healthy:
+            raise OllamaUnavailableException(
+                message=(
+                    f"Ollama daemon is unreachable on {settings.OLLAMA_BASE_URL}. "
+                    "Ensure Ollama is running (`ollama serve`) or toggle to a Cloud provider (Claude/OpenAI)."
+                )
+            )
+
     async def sse_event_generator() -> AsyncGenerator[str, None]:
         start_time = time.perf_counter()
         token_count = 0
@@ -130,9 +142,6 @@ async def stream_chat(
             is_ship30 = payload.skill == "ship30" or (
                 not payload.skill and "ship 30" in payload.message.lower()
             )
-
-            # Instantiate LLM client
-            llm_client = get_llm_client(model_name=target_model, settings=settings)
 
             # Zero-hallucination fallback check
             if is_fallback and not is_ship30:
@@ -198,7 +207,8 @@ async def stream_chat(
                 has_artifact=len(extracted_artifacts) > 0,
             )
 
-            # Persist and stream artifacts
+            # Persist artifacts to database first
+            persisted_artifact_payloads = []
             for art in extracted_artifacts:
                 persisted_artifact = await artifact_repo.create(
                     session_id=payload.session_id,
@@ -207,8 +217,7 @@ async def stream_chat(
                     content=art.content,
                     message_id=assistant_msg.id,
                 )
-                yield format_sse(
-                    "artifact",
+                persisted_artifact_payloads.append(
                     {
                         "id": str(persisted_artifact.id),
                         "session_id": str(payload.session_id),
@@ -216,11 +225,15 @@ async def stream_chat(
                         "artifact_type": art.artifact_type.value,
                         "title": art.title,
                         "content": art.content,
-                    },
+                    }
                 )
 
             # Commit the atomic conversational turn (user prompt + assistant response + artifacts)
             await db.commit()
+
+            # Emit artifact SSE events after successful commit
+            for art_payload in persisted_artifact_payloads:
+                yield format_sse("artifact", art_payload)
 
             # ─── Stage 5: Structured Logging & Done Event ──────────────────────
             elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)

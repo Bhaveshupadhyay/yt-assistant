@@ -262,11 +262,10 @@ async def test_stream_chat_nonexistent_session_raises_404(
 
 
 @pytest.mark.asyncio
-async def test_stream_chat_ollama_offline_emits_error_event(
+async def test_stream_chat_ollama_offline_preflight_returns_503(
     async_client: AsyncClient,
-    mock_retrieval_chunks: list[dict[str, Any]],
 ):
-    """Verify that when Ollama is offline, an SSE 'error' event with 503 is yielded."""
+    """Verify that when Ollama is offline at request preflight, POST /api/v1/chat returns HTTP 503."""
     create_resp = await async_client.post("/api/v1/sessions", json={"title": "Offline Ollama Session"})
     session_id = create_resp.json()["id"]
 
@@ -275,6 +274,42 @@ async def test_stream_chat_ollama_offline_emits_error_event(
     )
 
     with patch("app.api.v1.chat.get_llm_client", return_value=mock_failing_llm):
+        chat_payload = {
+            "session_id": session_id,
+            "message": "Explain growth loops",
+            "model": ModelName.LLAMA_3_2.value,
+        }
+
+        resp = await async_client.post("/api/v1/chat", json=chat_payload)
+        assert resp.status_code == 503
+        body = resp.json()
+        assert body["error"]["type"] == "OllamaUnavailableException"
+        assert "Ollama daemon is unreachable" in body["error"]["message"]
+
+
+@pytest.mark.asyncio
+async def test_stream_chat_ollama_midstream_failure_emits_error_event(
+    async_client: AsyncClient,
+    mock_retrieval_chunks: list[dict[str, Any]],
+):
+    """Verify that when preflight passes but streaming drops connection, an SSE 'error' event is yielded."""
+    create_resp = await async_client.post("/api/v1/sessions", json={"title": "Offline Ollama Session"})
+    session_id = create_resp.json()["id"]
+
+    class MockMidstreamFailingLLM(BaseLLMClient):
+        def __init__(self) -> None:
+            super().__init__(model_name="mock-llama", provider=ModelProvider.OLLAMA)
+
+        async def check_health(self) -> bool:
+            return True  # Preflight passes
+
+        async def astream(self, messages: list[dict[str, str]], system_prompt: str | None = None, **kwargs: Any) -> AsyncIterator[str]:
+            yield "Starting token... "
+            raise OllamaUnavailableException("Connection dropped mid-stream")
+
+    mock_llm = MockMidstreamFailingLLM()
+
+    with patch("app.api.v1.chat.get_llm_client", return_value=mock_llm):
         with patch.object(RAGService, "retrieve", AsyncMock(return_value=mock_retrieval_chunks)):
             chat_payload = {
                 "session_id": session_id,
