@@ -10,6 +10,11 @@ from app.core.database import async_session_factory
 from app.repositories.artifact_repository import ArtifactRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.session_repository import SessionRepository
+from app.services.artifact_service import ArtifactService
+from app.services.llm.base import BaseLLMClient
+from app.services.llm.factory import get_llm_client
+from app.services.rag_service import RAGService
+from app.services.ship30_service import Ship30Service
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +23,9 @@ logger = logging.getLogger(__name__)
 class LLMServiceProtocol(Protocol):
     """Protocol interface for LLM operations."""
 
-    async def astream_chat(self, messages: list[dict[str, str]], system_prompt: str) -> Any: ...
+    async def astream(self, messages: list[dict[str, str]], system_prompt: str | None = None, **kwargs: Any) -> Any: ...
+    async def acomplete(self, messages: list[dict[str, str]], system_prompt: str | None = None, **kwargs: Any) -> str: ...
+    async def astream_chat(self, messages: list[dict[str, str]], system_prompt: str | None = None, **kwargs: Any) -> Any: ...
 
 
 @runtime_checkable
@@ -62,35 +69,27 @@ def get_artifact_repository(
     return ArtifactRepository(session=db)
 
 
-class DefaultStubLLMService:
-    """Placeholder service provider until Phase 2/3 LLM services are connected."""
-
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
-
-    async def astream_chat(self, messages: list[dict[str, str]], system_prompt: str) -> Any:
-        raise NotImplementedError("LLMService will be fully implemented in Phase 2.")
-
-
-class DefaultStubRAGService:
-    """Placeholder RAG service provider until Phase 2/3 RAG pipeline is connected."""
-
-    def __init__(self, settings: Settings) -> None:
-        self.settings = settings
-
-    async def retrieve(self, query: str, top_k: int = 5) -> list[dict[str, Any]]:
-        raise NotImplementedError("RAGService will be fully implemented in Phase 2.")
-
-
 def get_llm_service(
     settings: Settings = Depends(get_settings),
-) -> LLMServiceProtocol:
-    """Dependency provider for LLM service."""
-    return DefaultStubLLMService(settings=settings)
+) -> BaseLLMClient:
+    """Dependency provider for LLM client."""
+    return get_llm_client(settings=settings)
 
 
 def get_rag_service(
     settings: Settings = Depends(get_settings),
-) -> RAGServiceProtocol:
+) -> RAGService:
     """Dependency provider for RAG service."""
-    return DefaultStubRAGService(settings=settings)
+    return RAGService(settings=settings)
+
+
+def get_ship30_service(
+    rag_service: RAGService = Depends(get_rag_service),
+) -> Ship30Service:
+    """Dependency provider for Ship30Service."""
+    return Ship30Service(rag_service=rag_service)
+
+
+def get_artifact_service() -> ArtifactService:
+    """Dependency provider for ArtifactService."""
+    return ArtifactService()
