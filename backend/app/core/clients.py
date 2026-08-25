@@ -33,6 +33,7 @@ _qdrant_sync_client: Any | None = None
 _ollama_client: httpx.AsyncClient | None = None
 _anthropic_client: httpx.AsyncClient | None = None
 _openai_client: httpx.AsyncClient | None = None
+_gemini_client: httpx.AsyncClient | None = None
 _dense_embedding_models: dict[str, Any] = {}
 _sparse_embedding_models: dict[str, Any] = {}
 
@@ -252,9 +253,30 @@ def get_openai_client(settings: Settings | None = None) -> httpx.AsyncClient:
     return _openai_client
 
 
+def get_gemini_client(settings: Settings | None = None) -> httpx.AsyncClient:
+    """Return or lazily create the HTTPX AsyncClient for Google Gemini API."""
+    global _gemini_client
+    if _gemini_client is None or _gemini_client.is_closed:
+        cfg = settings or get_settings()
+        headers = {
+            "content-type": "application/json",
+        }
+        if cfg.GEMINI_API_KEY:
+            headers["x-goog-api-key"] = cfg.GEMINI_API_KEY
+
+        limits = httpx.Limits(max_keepalive_connections=10, max_connections=30)
+        _gemini_client = httpx.AsyncClient(
+            base_url="https://generativelanguage.googleapis.com/v1beta",
+            headers=headers,
+            timeout=httpx.Timeout(connect=5.0, read=180.0, write=10.0, pool=5.0),
+            limits=limits,
+        )
+    return _gemini_client
+
+
 async def close_cloud_llm_clients() -> None:
-    """Close Anthropic and OpenAI HTTP clients."""
-    global _anthropic_client, _openai_client
+    """Close Anthropic, OpenAI, and Gemini HTTP clients."""
+    global _anthropic_client, _openai_client, _gemini_client
     if _anthropic_client is not None:
         try:
             if not _anthropic_client.is_closed:
@@ -267,6 +289,12 @@ async def close_cloud_llm_clients() -> None:
                 await _openai_client.aclose()
         finally:
             _openai_client = None
+    if _gemini_client is not None:
+        try:
+            if not _gemini_client.is_closed:
+                await _gemini_client.aclose()
+        finally:
+            _gemini_client = None
 
 
 # ==========================================

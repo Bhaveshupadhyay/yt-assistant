@@ -3,10 +3,9 @@
 from collections.abc import Sequence
 import uuid
 from fastapi import APIRouter, Depends, Query, status
-from app.core.dependencies import get_session_repository
-from app.core.exceptions import SessionNotFoundException
-from app.repositories.session_repository import SessionRepository
+from app.core.dependencies import get_session_service
 from app.schemas.session import SessionCreate, SessionDetail, SessionRead, SessionUpdate
+from app.services.session_service import SessionService
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
@@ -19,14 +18,10 @@ router = APIRouter(prefix="/sessions", tags=["Sessions"])
 )
 async def create_session(
     payload: SessionCreate,
-    session_repo: SessionRepository = Depends(get_session_repository),
+    session_service: SessionService = Depends(get_session_service),
 ) -> SessionRead:
     """Create a new conversational session."""
-    session = await session_repo.create(
-        title=payload.title,
-        model_used=payload.model_used,
-    )
-    return SessionRead.model_validate(session)
+    return await session_service.create_session(payload=payload)
 
 
 @router.get(
@@ -38,11 +33,10 @@ async def create_session(
 async def list_sessions(
     limit: int = Query(default=50, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    session_repo: SessionRepository = Depends(get_session_repository),
+    session_service: SessionService = Depends(get_session_service),
 ) -> Sequence[SessionRead]:
     """Retrieve recent chat sessions with pagination."""
-    sessions = await session_repo.list_recent(limit=limit, offset=offset)
-    return [SessionRead.model_validate(s) for s in sessions]
+    return await session_service.list_sessions(limit=limit, offset=offset)
 
 
 @router.get(
@@ -53,13 +47,10 @@ async def list_sessions(
 )
 async def get_session(
     session_id: uuid.UUID,
-    session_repo: SessionRepository = Depends(get_session_repository),
+    session_service: SessionService = Depends(get_session_service),
 ) -> SessionDetail:
     """Retrieve a single session by ID with its messages and artifacts."""
-    session = await session_repo.get_by_id(session_id)
-    if not session:
-        raise SessionNotFoundException(session_id=session_id)
-    return SessionDetail.model_validate(session)
+    return await session_service.get_session(session_id=session_id)
 
 
 @router.patch(
@@ -71,17 +62,10 @@ async def get_session(
 async def update_session(
     session_id: uuid.UUID,
     payload: SessionUpdate,
-    session_repo: SessionRepository = Depends(get_session_repository),
+    session_service: SessionService = Depends(get_session_service),
 ) -> SessionRead:
     """Update metadata for an existing chat session."""
-    session = await session_repo.update(
-        session_id=session_id,
-        title=payload.title,
-        model_used=payload.model_used,
-    )
-    if not session:
-        raise SessionNotFoundException(session_id=session_id)
-    return SessionRead.model_validate(session)
+    return await session_service.update_session(session_id=session_id, payload=payload)
 
 
 @router.delete(
@@ -91,9 +75,7 @@ async def update_session(
 )
 async def delete_session(
     session_id: uuid.UUID,
-    session_repo: SessionRepository = Depends(get_session_repository),
+    session_service: SessionService = Depends(get_session_service),
 ) -> None:
     """Delete a chat session along with associated messages and artifacts."""
-    deleted = await session_repo.delete(session_id=session_id)
-    if not deleted:
-        raise SessionNotFoundException(session_id=session_id)
+    await session_service.delete_session(session_id=session_id)

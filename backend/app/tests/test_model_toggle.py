@@ -16,7 +16,7 @@ from app.services.llm.openai_client import OpenAIClient
 @pytest.mark.asyncio
 async def test_list_models_endpoint_structure(async_client: AsyncClient):
     """Verify GET /api/v1/models returns active model and toggleable model catalog."""
-    with patch("app.api.v1.models.get_ollama_client") as mock_ollama_factory:
+    with patch("app.services.model_service.get_ollama_client") as mock_ollama_factory:
         mock_client = AsyncMock()
         mock_client.get.return_value = httpx.Response(200, json={"models": []})
         mock_ollama_factory.return_value = mock_client
@@ -45,6 +45,9 @@ def test_resolve_provider_for_model():
     """Verify correct provider mapping for various model families."""
     assert resolve_provider_for_model("claude-3-5-sonnet") == ModelProvider.ANTHROPIC
     assert resolve_provider_for_model("claude-3-7-sonnet") == ModelProvider.ANTHROPIC
+    assert resolve_provider_for_model("gemini-3.6-flash") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.6-flash-lite") == ModelProvider.GEMINI
+    assert resolve_provider_for_model("gemini-3.7-pro") == ModelProvider.GEMINI
     assert resolve_provider_for_model("gpt-4o") == ModelProvider.OPENAI
     assert resolve_provider_for_model("gpt-4o-mini") == ModelProvider.OPENAI
     assert resolve_provider_for_model("llama3.2") == ModelProvider.OLLAMA
@@ -55,15 +58,22 @@ def test_resolve_provider_for_model():
 
 def test_get_llm_client_factory_switching():
     """Verify get_llm_client instantiates correct client class based on model name."""
+    from app.services.llm.gemini_client import GeminiClient
+
     settings = Settings(
         ANTHROPIC_API_KEY="test-anthropic-key",
         OPENAI_API_KEY="test-openai-key",
-        OLLAMA_BASE_URL="http://localhost:11434",
+        GEMINI_API_KEY="test-gemini-key",
+        OLLAMA_MODEL="llama3.2",
     )
 
     client_claude = get_llm_client(model_name=ModelName.CLAUDE_3_5_SONNET, settings=settings)
     assert isinstance(client_claude, AnthropicClient)
     assert client_claude.provider == ModelProvider.ANTHROPIC
+
+    client_gemini = get_llm_client(model_name=ModelName.GEMINI_3_6_FLASH, settings=settings)
+    assert isinstance(client_gemini, GeminiClient)
+    assert client_gemini.provider == ModelProvider.GEMINI
 
     client_openai = get_llm_client(model_name=ModelName.GPT_4O, settings=settings)
     assert isinstance(client_openai, OpenAIClient)
@@ -97,3 +107,75 @@ async def test_ollama_offline_raises_service_unavailable():
 
     assert exc_info.value.status_code == 503
     assert "Ollama daemon is unreachable" in exc_info.value.message
+
+
+@pytest.mark.asyncio
+async def test_list_available_working_models_endpoint(async_client: AsyncClient):
+    """Verify GET /api/v1/models/available returns verified operational models."""
+    with patch("app.services.model_service.get_ollama_client") as mock_ollama_factory:
+        mock_ollama = AsyncMock()
+        mock_ollama.get.return_value = httpx.Response(200, json={"models": [{"name": "llama3.2:latest"}]})
+        mock_ollama_factory.return_value = mock_ollama
+
+        with patch("app.services.model_service.get_gemini_client") as mock_gemini_factory:
+            mock_gemini = AsyncMock()
+            mock_gemini.get.return_value = httpx.Response(200, json={"models": []})
+            mock_gemini_factory.return_value = mock_gemini
+
+            response = await async_client.get("/api/v1/models/available")
+            assert response.status_code == 200
+            data = response.json()
+
+            assert "total_working" in data
+            assert "working_models" in data
+            assert "providers" in data
+            assert data["total_working"] >= 1
+            assert len(data["working_models"]) == data["total_working"]
+
+            # Test alias endpoint /models/working
+            alias_response = await async_client.get("/api/v1/models/working")
+            assert alias_response.status_code == 200
+            assert alias_response.json()["total_working"] == data["total_working"]
+
+
+@pytest.mark.asyncio
+async def test_list_available_working_models_gemini_unreachable(async_client: AsyncClient):
+    """Verify GET /api/v1/models/available marks Gemini as unreachable when connection fails."""
+    with patch("app.services.model_service.get_ollama_client") as mock_ollama_factory:
+        mock_ollama = AsyncMock()
+        mock_ollama.get.side_effect = httpx.ConnectError("Ollama connection failed")
+        mock_ollama_factory.return_value = mock_ollama
+
+        with patch("app.services.model_service.get_gemini_client") as mock_gemini_factory:
+            mock_gemini = AsyncMock()
+            mock_gemini.get.side_effect = httpx.ConnectTimeout("Gemini timeout")
+            mock_gemini_factory.return_value = mock_gemini
+
+            response = await async_client.get("/api/v1/models/available")
+            assert response.status_code == 200
+            data = response.json()
+
+            assert data["providers"]["gemini"]["status"] == "unreachable"
+            assert "Gemini API is unreachable" in data["providers"]["gemini"]["message"]
+            assert data["providers"]["ollama"]["status"] == "unreachable"
+
+
+@pytest.mark.asyncio
+async def test_list_available_working_models_ollama_non_200(async_client: AsyncClient):
+    """Verify GET /api/v1/models/available handles Ollama returning non-200 status code."""
+    with patch("app.services.model_service.get_ollama_client") as mock_ollama_factory:
+        mock_ollama = AsyncMock()
+        mock_ollama.get.return_value = httpx.Response(502, text="Bad Gateway")
+        mock_ollama_factory.return_value = mock_ollama
+
+        with patch("app.services.model_service.get_gemini_client") as mock_gemini_factory:
+            mock_gemini = AsyncMock()
+            mock_gemini.get.return_value = httpx.Response(200, json={"models": []})
+            mock_gemini_factory.return_value = mock_gemini
+
+            response = await async_client.get("/api/v1/models/available")
+            assert response.status_code == 200
+            data = response.json()
+
+            assert data["providers"]["ollama"]["status"] == "unreachable"
+            assert "Ollama daemon returned status 502" in data["providers"]["ollama"]["message"]

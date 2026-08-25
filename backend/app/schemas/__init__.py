@@ -11,13 +11,21 @@ from app.schemas.chat import (
 from app.schemas.chunk import TranscriptChunk, TranscriptMetadata
 from app.schemas.health import HealthResponse
 from app.schemas.message import CitationSchema, MessageBase, MessageCreate, MessageRead
-from app.schemas.models import ModelItem, ModelsResponse, ProviderStatus
+from app.schemas.models import (
+    AvailableWorkingModelsResponse,
+    ModelItem,
+    ModelsResponse,
+    ProviderHealthSummary,
+    ProviderStatus,
+    WorkingModelItem,
+)
 from app.schemas.session import SessionBase, SessionCreate, SessionDetail, SessionRead, SessionUpdate
 
 __all__ = [
     "ArtifactBase",
     "ArtifactCreate",
     "ArtifactRead",
+    "AvailableWorkingModelsResponse",
     "ChatDonePayload",
     "ChatErrorPayload",
     "ChatRequest",
@@ -30,6 +38,7 @@ __all__ = [
     "MessageRead",
     "ModelItem",
     "ModelsResponse",
+    "ProviderHealthSummary",
     "ProviderStatus",
     "SessionBase",
     "SessionCreate",
@@ -38,5 +47,6 @@ __all__ = [
     "SessionUpdate",
     "TranscriptChunk",
     "TranscriptMetadata",
+    "WorkingModelItem",
 ]
 

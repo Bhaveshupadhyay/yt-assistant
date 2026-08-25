@@ -123,7 +123,7 @@ async def test_stream_chat_sse_grounded_response(
 
     mock_llm = MockStreamingLLM(stream_chunks=["Product-Led ", "Growth ", "is ", "strategic."])
 
-    with patch("app.api.v1.chat.get_llm_client", return_value=mock_llm):
+    with patch("app.services.chat_service.get_llm_client", return_value=mock_llm):
         with patch.object(RAGService, "retrieve", AsyncMock(return_value=mock_retrieval_chunks)):
             chat_payload = {
                 "session_id": session_id,
@@ -194,7 +194,7 @@ async def test_stream_chat_sse_with_artifact_generation(
     ]
     mock_llm = MockStreamingLLM(stream_chunks=raw_llm_stream)
 
-    with patch("app.api.v1.chat.get_llm_client", return_value=mock_llm):
+    with patch("app.services.chat_service.get_llm_client", return_value=mock_llm):
         with patch.object(RAGService, "retrieve", AsyncMock(return_value=mock_retrieval_chunks)):
             chat_payload = {
                 "session_id": session_id,
@@ -273,7 +273,7 @@ async def test_stream_chat_ollama_offline_preflight_returns_503(
         exception_to_raise=OllamaUnavailableException()
     )
 
-    with patch("app.api.v1.chat.get_llm_client", return_value=mock_failing_llm):
+    with patch("app.services.chat_service.get_llm_client", return_value=mock_failing_llm):
         chat_payload = {
             "session_id": session_id,
             "message": "Explain growth loops",
@@ -309,7 +309,7 @@ async def test_stream_chat_ollama_midstream_failure_emits_error_event(
 
     mock_llm = MockMidstreamFailingLLM()
 
-    with patch("app.api.v1.chat.get_llm_client", return_value=mock_llm):
+    with patch("app.services.chat_service.get_llm_client", return_value=mock_llm):
         with patch.object(RAGService, "retrieve", AsyncMock(return_value=mock_retrieval_chunks)):
             chat_payload = {
                 "session_id": session_id,
