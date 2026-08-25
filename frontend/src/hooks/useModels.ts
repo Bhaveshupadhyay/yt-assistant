@@ -21,6 +21,7 @@ export function useModels() {
   activeModelRef.current = activeModel;
 
   const setActiveModel = useCallback((modelId: string) => {
+    activeModelRef.current = modelId;
     setActiveModelState(modelId);
     try {
       localStorage.setItem(STORAGE_KEY, modelId);
