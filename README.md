@@ -36,98 +36,209 @@
 
 ---
 
-## Quickstart and Development
+## Local Setup and Installation Guide
 
-### 1. One-Command Docker Deployment
-The quickest way to run the entire stack (Frontend, Backend, and Qdrant Vector Store):
+Follow the step-by-step instructions below to set up and run the entire platform on your local machine.
 
-```bash
-docker compose up --build
-```
+### 1. Prerequisites and System Requirements
 
-- **Frontend Workbench**: `http://localhost:5173` (or `http://localhost:3000`)
-- **Backend API Docs**: `http://localhost:8000/docs`
-- **Qdrant Dashboard**: `http://localhost:6333/dashboard`
+Before starting, ensure you have the following installed on your machine:
+- **Python 3.12+**: Tested on Python 3.12.x.
+- **`uv` Package Manager**: Fast, deterministic Python package resolver.
+  ```bash
+  # macOS / Linux
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  # Windows
+  powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+  ```
+- **Node.js 18+ and `npm`**: For building and running the React frontend.
+  ```bash
+  node -v  # Should be v18.0.0 or higher
+  npm -v
+  ```
+- **Docker and Docker Compose** (Recommended): For running the Qdrant vector store and optional containerized deployment.
+- **Ollama** (Optional for local offline AI models): Download from [ollama.ai](https://ollama.ai).
 
 ---
 
-### 2. Local Development Setup
+### 2. Clone the Repository and Configure Environment
 
-#### Prerequisites
-- Python 3.12+ with [`uv`](https://github.com/astral-sh/uv) installed
-- Node.js 18+ and `npm`
-- (Optional) Local [Ollama](https://ollama.ai) daemon running on `http://localhost:11434`
-- (Optional) Qdrant running on `http://localhost:6333` (or start via `docker run -p 6333:6333 qdrant/qdrant`)
-
-#### Backend Setup
 ```bash
-# Navigate to backend directory
+# Clone the repository
+git clone https://github.com/Bhaveshupadhyay/yt-assistant.git
+cd yt-assistant
+
+# Copy the example environment file
+cp .env.example .env
+```
+
+Open `.env` and configure your settings if needed. By default, local development uses SQLite (`lenny_assistant.db`) and local Qdrant, requiring no external paid API keys if running with local Ollama.
+
+---
+
+### 3. Start the Vector Database (Qdrant)
+
+The RAG pipeline requires Qdrant for semantic search. You can run Qdrant via Docker with a single command:
+
+```bash
+docker run -d \
+  --name qdrant \
+  -p 6333:6333 \
+  -p 6334:6334 \
+  -v qdrant_storage:/qdrant/storage \
+  qdrant/qdrant:v1.13.4
+```
+
+Verify that Qdrant is running by visiting the web dashboard: `http://localhost:6333/dashboard`.
+
+*(Note: If you are using Qdrant Cloud, set `QDRANT_URL` and `QDRANT_API_KEY` in `.env` instead).*
+
+---
+
+### 4. (Optional) Set Up Local LLMs with Ollama
+
+To run offline models without API keys:
+
+1. Start the Ollama background daemon:
+   ```bash
+   ollama serve
+   ```
+2. Pull the default local model:
+   ```bash
+   ollama pull llama3.2
+   ```
+3. (Optional) Additional supported models:
+   ```bash
+   ollama pull mistral
+   ollama pull qwen2.5
+   ```
+
+---
+
+### 5. Backend Setup and Ingestion
+
+The backend uses `uv` for virtual environment management and dependency installation.
+
+```bash
+# Navigate to the backend directory
 cd backend
 
-# Install dependencies using uv
+# Install all dependencies into virtual environment
 uv sync
 
-# Run transcript ingestion and vector indexing
+# Ingest and index podcast transcripts into Qdrant vector store
 uv run python -m app.scripts.ingest
 
-# Start FastAPI development server
+# Start the FastAPI development server
 uv run uvicorn main:app --reload --port 8000
 ```
 
-#### Frontend Setup
-```bash
-# Navigate to frontend directory
-cd frontend
-
-# Install npm packages
-npm install
-
-# Start Vite development server
-npm run dev
-```
-
-The frontend will be available at `http://localhost:5173` with automatic API proxying to `http://localhost:8000`.
+#### Verification:
+- Backend Health Check: `http://localhost:8000/health`
+- Interactive Swagger API Docs: `http://localhost:8000/docs`
+- Alternative ReDoc API Docs: `http://localhost:8000/redoc`
 
 ---
 
-### 3. Running Automated Tests
+### 6. Frontend Setup and Development Server
+
+In a new terminal window:
+
+```bash
+# Navigate to the frontend directory
+cd frontend
+
+# Install Node dependencies
+npm install
+
+# Start the Vite development server
+npm run dev
+```
+
+#### Access the Application:
+- Open your browser to `http://localhost:5173` (or `http://localhost:3000`).
+- The frontend automatically proxies API requests to `http://localhost:8000`.
+
+---
+
+### 7. Alternative: One-Command Docker Compose Deployment
+
+If you prefer running everything in containers without manual environment setup:
+
+```bash
+# From the project root
+docker compose up --build
+```
+
+Services started:
+- **Frontend Workbench**: `http://localhost:5173`
+- **Backend API**: `http://localhost:8000`
+- **Qdrant Vector Store**: `http://localhost:6333`
+
+To shut down services:
+```bash
+docker compose down
+```
+
+---
+
+## Running Tests and Code Quality
+
+### Backend Automated Test Suite
+Execute the full pytest suite (covering API routes, RAG retrieval, artifact service, and model providers):
 
 ```bash
 cd backend
 uv run pytest
 ```
 
+### Frontend Build Verification
+Verify TypeScript types and produce an optimized production bundle:
+
+```bash
+cd frontend
+npm run build
+```
+
 ---
 
-## Environment Variables Configuration
+## Environment Variables Reference
 
-Create a `.env` file in the root directory (or copy from `.env.example`):
+Below are the variables supported in `.env` (mirrored in `.env.example`):
 
-```env
-# Application Settings
-ENVIRONMENT=development
-LOG_LEVEL=INFO
-DEBUG=false
+| Variable | Default Value | Description |
+|---|---|---|
+| `APP_NAME` | `"The Lenny Growth Assistant"` | Application name displayed in API docs and UI |
+| `APP_VERSION` | `"1.0.0"` | Application version identifier |
+| `DEBUG` | `false` | Enable verbose debug output |
+| `ENVIRONMENT` | `"development"` | Runtime mode (`development`, `staging`, `production`, `testing`) |
+| `DATABASE_URL` | `"sqlite+aiosqlite:///./lenny_assistant.db"` | Async database connection string (SQLite or PostgreSQL) |
+| `DATABASE_ECHO` | `false` | Output raw SQL statements to console |
+| `QDRANT_URL` | `"http://localhost:6333"` | Qdrant vector database URL |
+| `QDRANT_API_KEY` | `""` | Optional API key for Qdrant Cloud |
+| `QDRANT_COLLECTION_NAME` | `"lenny_transcripts"` | Qdrant collection name for chunk vectors |
+| `OLLAMA_BASE_URL` | `"http://localhost:11434"` | Local Ollama daemon host URL |
+| `OLLAMA_MODEL` | `"llama3.2"` | Default local LLM model name |
+| `ANTHROPIC_API_KEY` | `""` | Optional API key for Anthropic Claude models |
+| `OPENAI_API_KEY` | `""` | Optional API key for OpenAI GPT models |
+| `GEMINI_API_KEY` | `""` | Optional API key for Google Gemini models |
+| `CORS_ORIGINS` | `["http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173"]` | Allowed CORS origins for frontend client |
+| `LOG_LEVEL` | `"INFO"` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
+| `LOG_FORMAT` | `"json"` | Log format (`json` or `console`) |
 
-# Database Configuration
-DATABASE_URL=sqlite+aiosqlite:///./lenny_assistant.db
+---
 
-# Vector Database (Qdrant)
-QDRANT_URL=http://localhost:6333
-QDRANT_COLLECTION_NAME=lenny_transcripts
+## Troubleshooting and FAQ
 
-# Local Model (Ollama)
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
-
-# Cloud Model API Keys (Optional for Cloud Execution)
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-OPENAI_API_KEY=your_openai_api_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
-
-# Frontend CORS
-CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173"]
-```
+1. **Ollama daemon not detected (`http://localhost:11434`)**:
+   - Ensure Ollama is installed and running: run `ollama serve` in a terminal.
+   - If using cloud models, provide an API key (`GEMINI_API_KEY`, `ANTHROPIC_API_KEY`, or `OPENAI_API_KEY`) and toggle the model selector in the UI.
+2. **Qdrant connection refused (`http://localhost:6333`)**:
+   - Ensure the Qdrant container is active: `docker ps`. If stopped, restart with `docker start qdrant` or run `docker compose up qdrant`.
+3. **Database initialization**:
+   - SQLite tables are automatically created on first FastAPI server boot. No manual migrations are required for local testing.
+4. **Port conflicts**:
+   - If port 8000 or 5173 is already in use, you can pass custom ports: `uv run uvicorn main:app --port 8001` or `npm run dev -- --port 5174`.
 
 ---
 
@@ -135,8 +246,9 @@ CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://localhost:
 
 ```text
 .
+├── .env.example                   # Environment configuration template
 ├── PRD.md                         # Product Requirements Document
-├── README.md                      # Project Overview and Quickstart
+├── README.md                      # Project Overview and Setup Guide
 ├── architecture.md                # System Architecture and DB Schema
 ├── design.md                      # UI/UX Design System Specifications
 ├── docker-compose.yml             # Containerized multi-service deployment
@@ -180,3 +292,4 @@ CORS_ORIGINS=["http://localhost:3000","http://127.0.0.1:3000","http://localhost:
 - **Zero Untrusted Execution**: Generated HTML, CSS, and JavaScript widgets are isolated in an `<iframe>` container with `sandbox="allow-scripts"`.
 - **Content Security Policy**: The iframe enforces `connect-src 'none'`, preventing unauthorized network requests, cookie exfiltration, or access to parent window storage.
 - **Input Sanitization**: User and model inputs are strictly typed and validated via Pydantic v2 schemas.
+
