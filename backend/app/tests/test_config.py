@@ -7,8 +7,8 @@ from app.core.enums import Environment, LogFormat, LogLevel, ModelName
 
 
 def test_default_settings():
-    """Verify default settings values and enum instances."""
-    settings = Settings()
+    """Verify default settings values and enum instances in isolation from local env files."""
+    settings = Settings(_env_file=None)
     assert settings.APP_NAME == "The Lenny Growth Assistant"
     assert settings.APP_VERSION == "1.0.0"
     assert settings.API_V1_PREFIX == "/api/v1"

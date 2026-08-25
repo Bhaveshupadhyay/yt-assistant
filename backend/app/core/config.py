@@ -2,7 +2,7 @@
 
 from functools import lru_cache
 from typing import Any
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from app.core.enums import Environment, LogFormat, LogLevel, ModelName
 
@@ -32,6 +32,10 @@ class Settings(BaseSettings):
         default="sqlite+aiosqlite:///./lenny_assistant.db",
         description="Async database connection string (PostgreSQL or SQLite)",
     )
+    POSTGRES_DB: str | None = Field(
+        default=None,
+        description="Optional PostgreSQL database URL alias",
+    )
     DATABASE_ECHO: bool = Field(
         default=False,
         description="Enable SQLAlchemy query echo for debugging",
@@ -42,9 +46,17 @@ class Settings(BaseSettings):
         default="http://localhost:6333",
         description="Qdrant vector database URL",
     )
+    QDRANT_ENDPOINT: str | None = Field(
+        default=None,
+        description="Optional Qdrant endpoint alias",
+    )
     QDRANT_API_KEY: str | None = Field(
         default=None,
         description="Optional Qdrant Cloud / Server API Key",
+    )
+    QDRANT_KEY: str | None = Field(
+        default=None,
+        description="Optional Qdrant API key alias",
     )
     QDRANT_COLLECTION_NAME: str = Field(
         default="lenny_transcripts",
@@ -95,6 +107,10 @@ class Settings(BaseSettings):
         default=None,
         description="OpenAI API Key",
     )
+    GEMINI_API_KEY: str | None = Field(
+        default=None,
+        description="Google Gemini API Key",
+    )
 
     # CORS Origins
     CORS_ORIGINS: list[str] = Field(
@@ -111,6 +127,25 @@ class Settings(BaseSettings):
         default=LogFormat.JSON,
         description="Log output format: JSON or CONSOLE",
     )
+
+    @model_validator(mode="after")
+    def resolve_aliases_and_url_schemes(self) -> "Settings":
+        """Resolve aliases for database and Qdrant endpoints and normalize URL schemes."""
+        if self.POSTGRES_DB and (self.DATABASE_URL == "sqlite+aiosqlite:///./lenny_assistant.db" or not self.DATABASE_URL):
+            self.DATABASE_URL = self.POSTGRES_DB
+
+        if self.DATABASE_URL.startswith("postgresql://"):
+            self.DATABASE_URL = self.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif self.DATABASE_URL.startswith("postgres://"):
+            self.DATABASE_URL = self.DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+
+        if self.QDRANT_ENDPOINT and (self.QDRANT_URL == "http://localhost:6333" or not self.QDRANT_URL):
+            self.QDRANT_URL = self.QDRANT_ENDPOINT
+
+        if self.QDRANT_KEY and not self.QDRANT_API_KEY:
+            self.QDRANT_API_KEY = self.QDRANT_KEY
+
+        return self
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
