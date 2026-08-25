@@ -288,7 +288,7 @@ async def init_all_clients(settings: Settings | None = None, create_tables: bool
         await init_db(engine_inst)
 
     # 2. Warm up Qdrant, Ollama and Cloud Clients
-    get_qdrant_client(cfg)
+    get_qdrant_sync_client(cfg)
     ollama = get_ollama_client(cfg)
     try:
         resp = await ollama.get("/api/tags", timeout=0.5)

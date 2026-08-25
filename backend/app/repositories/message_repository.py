@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from typing import Any
 import uuid
-from sqlalchemy import asc, select
+from sqlalchemy import asc, desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums import MessageRole
 from app.models.message import Message
@@ -57,6 +57,20 @@ class MessageRepository(BaseRepository[Message]):
         )
         result = await self.session.execute(stmt)
         return result.scalars().all()
+
+    async def get_recent_history(
+        self,
+        session_id: uuid.UUID,
+        limit: int = 20,
+        exclude_id: uuid.UUID | None = None,
+    ) -> list[Message]:
+        """Fetch the most recent N messages for a session in chronological order, optionally excluding a specific message ID."""
+        stmt = select(Message).where(Message.session_id == session_id)
+        if exclude_id is not None:
+            stmt = stmt.where(Message.id != exclude_id)
+        stmt = stmt.order_by(desc(Message.created_at)).limit(limit)
+        result = await self.session.execute(stmt)
+        return list(reversed(result.scalars().all()))
 
     async def delete(self, message_id: uuid.UUID) -> bool:
         """Delete a message by its UUID."""
