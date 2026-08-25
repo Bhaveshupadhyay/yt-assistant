@@ -135,3 +135,46 @@ async def test_list_available_working_models_endpoint(async_client: AsyncClient)
             alias_response = await async_client.get("/api/v1/models/working")
             assert alias_response.status_code == 200
             assert alias_response.json()["total_working"] == data["total_working"]
+
+
+@pytest.mark.asyncio
+async def test_list_available_working_models_gemini_unreachable(async_client: AsyncClient):
+    """Verify GET /api/v1/models/available marks Gemini as unreachable when connection fails."""
+    with patch("app.api.v1.models.get_ollama_client") as mock_ollama_factory:
+        mock_ollama = AsyncMock()
+        mock_ollama.get.side_effect = httpx.ConnectError("Ollama connection failed")
+        mock_ollama_factory.return_value = mock_ollama
+
+        with patch("app.api.v1.models.get_gemini_client") as mock_gemini_factory:
+            mock_gemini = AsyncMock()
+            mock_gemini.get.side_effect = httpx.ConnectTimeout("Gemini timeout")
+            mock_gemini_factory.return_value = mock_gemini
+
+            response = await async_client.get("/api/v1/models/available")
+            assert response.status_code == 200
+            data = response.json()
+
+            assert data["providers"]["gemini"]["status"] == "unreachable"
+            assert "Gemini API is unreachable" in data["providers"]["gemini"]["message"]
+            assert data["providers"]["ollama"]["status"] == "unreachable"
+
+
+@pytest.mark.asyncio
+async def test_list_available_working_models_ollama_non_200(async_client: AsyncClient):
+    """Verify GET /api/v1/models/available handles Ollama returning non-200 status code."""
+    with patch("app.api.v1.models.get_ollama_client") as mock_ollama_factory:
+        mock_ollama = AsyncMock()
+        mock_ollama.get.return_value = httpx.Response(502, text="Bad Gateway")
+        mock_ollama_factory.return_value = mock_ollama
+
+        with patch("app.api.v1.models.get_gemini_client") as mock_gemini_factory:
+            mock_gemini = AsyncMock()
+            mock_gemini.get.return_value = httpx.Response(200, json={"models": []})
+            mock_gemini_factory.return_value = mock_gemini
+
+            response = await async_client.get("/api/v1/models/available")
+            assert response.status_code == 200
+            data = response.json()
+
+            assert data["providers"]["ollama"]["status"] == "unreachable"
+            assert "Ollama daemon returned status 502" in data["providers"]["ollama"]["message"]

@@ -233,7 +233,7 @@ async def list_available_working_models(
             status="operational",
             configured=True,
             models_count=len(anthropic_models),
-            message="API credentials configured and active.",
+            message="API credentials configured; live probe not performed.",
         )
     else:
         providers_summary[ModelProvider.ANTHROPIC.value] = ProviderHealthSummary(
@@ -256,7 +256,7 @@ async def list_available_working_models(
             gemini_client = get_gemini_client(settings)
             start_t = time.perf_counter()
             resp = await gemini_client.get(
-                f"/models?key={settings.GEMINI_API_KEY}",
+                "/models",
                 headers={"x-goog-api-key": settings.GEMINI_API_KEY},
                 timeout=2.0,
             )
@@ -271,7 +271,8 @@ async def list_available_working_models(
                 gemini_msg = f"Gemini API returned status {resp.status_code}."
         except Exception as exc:
             logger.debug(f"Gemini live health check failed: {exc}")
-            gemini_status = "operational"
+            gemini_status = "unreachable"
+            gemini_msg = f"Gemini API is unreachable: {exc}"
 
         if gemini_status in ("operational", "degraded"):
             for m in gemini_models:
@@ -323,7 +324,7 @@ async def list_available_working_models(
             status="operational",
             configured=True,
             models_count=len(openai_models),
-            message="API credentials configured and active.",
+            message="API credentials configured; live probe not performed.",
         )
     else:
         providers_summary[ModelProvider.OPENAI.value] = ProviderHealthSummary(
@@ -359,6 +360,8 @@ async def list_available_working_models(
                         description=m["description"],
                     )
                 )
+        else:
+            ollama_msg = f"Ollama daemon returned status {resp.status_code}."
     except Exception as exc:
         logger.debug(f"Ollama live connectivity check failed: {exc}")
         ollama_msg = f"Ollama daemon unreachable on {settings.OLLAMA_BASE_URL}. Run `ollama serve` to activate local models."

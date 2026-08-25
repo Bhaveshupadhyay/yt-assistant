@@ -1,5 +1,4 @@
-"""Pydantic schemas for LLM models and provider toggle metadata."""
-
+from typing import Literal
 from pydantic import BaseModel, Field
 from app.core.enums import ModelProvider
 
@@ -40,7 +39,10 @@ class WorkingModelItem(BaseModel):
     name: str = Field(..., description="Human-readable model name")
     provider: ModelProvider = Field(..., description="Model provider")
     is_cloud: bool = Field(..., description="Whether hosted cloud or local")
-    status: str = Field(default="operational", description="Operational status: operational, degraded, or offline")
+    status: Literal["operational", "degraded", "offline", "unreachable", "unauthorized"] = Field(
+        default="operational",
+        description="Operational status: operational, degraded, offline, unreachable, or unauthorized",
+    )
     latency_ms: float | None = Field(default=None, description="Health-check response latency in milliseconds")
     description: str | None = Field(default=None, description="Model description")
 
@@ -49,7 +51,10 @@ class ProviderHealthSummary(BaseModel):
     """Provider health summary detailing connectivity and model counts."""
 
     name: str = Field(..., description="Provider display name")
-    status: str = Field(..., description="Status: operational, unconfigured, or unreachable")
+    status: Literal["operational", "degraded", "unconfigured", "unreachable", "unauthorized"] = Field(
+        ...,
+        description="Status: operational, degraded, unconfigured, unreachable, or unauthorized",
+    )
     configured: bool = Field(..., description="Whether credentials or endpoints are set")
     models_count: int = Field(..., description="Number of active working models for this provider")
     message: str | None = Field(default=None, description="Detailed status or diagnostic message")
