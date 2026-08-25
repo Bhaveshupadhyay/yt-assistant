@@ -1,0 +1,78 @@
+{
+  "episode_id": "ep_05_madhavan_ramanujam",
+  "episode_title": "Madhavan Ramanujam on Monetization Strategy, Designing Around the Price, and Avoiding Failure Archetypes",
+  "guest_name": "Madhavan Ramanujam",
+  "guest_role": "Senior Partner at Simon-Kucher & Partners, Author of 'Monetizing Innovation'",
+  "topic": "Monetization, Pricing Strategy, Willingness to Pay, Packaging, Product Strategy",
+  "url": "https://www.youtube.com/watch?v=madhavan_pricing",
+  "publication_date": "2022-11-03",
+  "summary": "Madhavan Ramanujam shares why 72% of software innovations fail due to ignoring willingness to pay, the four classic pricing failure archetypes, how to design products around the price tag, and best practices for tier packaging.",
+  "key_takeaways": [
+    "Having willingness-to-pay (WTP) conversations before writing code is the single highest ROI research a product team can conduct.",
+    "The 4 Pricing Failure Archetypes are: Feature Shocks (cramming too many features into one bloated product), Minivations (undercharging for a blockbuster idea), Hidden Gems (overlooking huge customer value in secondary features), and Undeads (products that nobody wants or pays for).",
+    "Good, Better, Best packaging should be structured so that 70% of mainstream customers land in the 'Better' tier.",
+    "Never price based on cost-plus; always price based on value created and customer willingness to pay."
+  ],
+  "transcript": [
+    {
+      "timestamp": "00:00:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "Welcome to Lenny's Podcast. Today my guest is Madhavan Ramanujam. Madhavan is a Senior Partner at Simon-Kucher & Partners and author of 'Monetizing Innovation'. He has advised over 500 companies—including Uber, Stripe, and LinkedIn—on pricing and monetization. Madhavan, welcome!"
+    },
+    {
+      "timestamp": "00:01:05",
+      "speaker": "Madhavan Ramanujam",
+      "text": "Thank you Lenny, delighted to be here. Pricing is the most overlooked lever in tech."
+    },
+    {
+      "timestamp": "00:02:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "In your book, you cite a staggering statistic: 72% of new products fail to achieve their monetization targets. Why does this happen?"
+    },
+    {
+      "timestamp": "00:03:00",
+      "speaker": "Madhavan Ramanujam",
+      "text": "The fundamental root cause is that teams build the product first, and only at the end of the roadmap do they ask 'So, how much should we charge for this?' That is completely backwards. Monetization is not an afterthought; it is a design parameter. If you don't know who values the feature, how much they value it, and what their willingness to pay (WTP) is, you end up designing a product in an ivory tower. You must design the product *around* the price tag."
+    },
+    {
+      "timestamp": "00:07:45",
+      "speaker": "Lenny Rachitsky",
+      "text": "What are the four failure archetypes companies fall into when they get pricing wrong?"
+    },
+    {
+      "timestamp": "00:08:30",
+      "speaker": "Madhavan Ramanujam",
+      "text": "The four archetypes are: 1. Feature Shock: You cram 50 features into one giant product for everyone, making it too complex and too expensive for mainstream users. 2. Minivation: You build a truly breakthrough product that solves a massive business problem, but you underprice it by 5x to 10x because you lack the courage or market data to capture its true value. 3. Hidden Gem: A secondary or internal tool you built turns out to have massive standalone customer demand, but you gave it away for free or buried it in an obscure menu. 4. Undead: A product that answers the wrong question or solves a non-urgent problem. It limps along with lukewarm interest and zero pricing power."
+    },
+    {
+      "timestamp": "00:14:20",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you conduct a customer Willingness to Pay conversation without asking 'How much would you pay for this?' which usually yields bad data?"
+    },
+    {
+      "timestamp": "00:15:10",
+      "speaker": "Madhavan Ramanujam",
+      "text": "Never ask open-ended 'How much would you pay?' questions. Instead, use the Van Westendorp Price Sensitivity Meter or trade-off conjoint questions. Ask four specific price perception questions: 1. At what price does this product feel so cheap that you would question its quality? 2. At what price does it feel like a bargain? 3. At what price does it feel expensive, but you'd still consider buying it? 4. At what price is it too expensive to even consider? The intersection of these curves gives you the optimal price corridor."
+    },
+    {
+      "timestamp": "00:21:00",
+      "speaker": "Lenny Rachitsky",
+      "text": "How should a B2B SaaS startup structure its Good, Better, Best packaging tiers?"
+    },
+    {
+      "timestamp": "00:21:45",
+      "speaker": "Madhavan Ramanujam",
+      "text": "Your 'Good' tier is your entry-level, low-friction plan that captures early adopters and small teams. Your 'Better' tier is your hero tier: it must contain the features that 60–70% of your ideal customers need to succeed. Your 'Best' tier is tailored for power users and enterprise requirements (compliance, SAML SSO, audit logs, dedicated SLAs). If everyone buys the 'Good' plan, your gating is too generous. If nobody buys the 'Best' plan, your enterprise differentiators are too weak."
+    },
+    {
+      "timestamp": "00:27:30",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you execute a price increase on existing customers without triggering a backlash or mass cancellations?"
+    },
+    {
+      "timestamp": "00:28:15",
+      "speaker": "Madhavan Ramanujam",
+      "text": "Three core rules for price increases: 1. Always bundle new value with the increase. Never say 'inflation went up'; say 'over the past 2 years we shipped 40 new integrations and 5x faster speeds.' 2. Provide a grandfathering runway. Tell existing customers: 'As a thank you for your loyalty, your existing price is locked for the next 12 months.' This removes immediate friction while boosting renewals. 3. Train your sales and success teams with a clear concession matrix so they don't grant random, unauthorized discounts."
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "episode_id": "ep_12_ethan_evans",
+  "episode_title": "Ethan Evans on Executive Career Growth, 2x2 Decision Frameworks, and Managing Up at Amazon Scale",
+  "guest_name": "Ethan Evans",
+  "guest_role": "Former Vice President at Amazon (Twitch Prime, Prime Video, Appstore)",
+  "topic": "Career Growth, Executive Leadership, Managing Up, Decision Making, Amazon Leadership Principles",
+  "url": "https://www.youtube.com/watch?v=ethan_evans_leadership",
+  "publication_date": "2023-09-14",
+  "summary": "Ethan Evans shares insights from his 15-year career as a Vice President at Amazon, managing over 800 people, including how to break through the career plateau from Senior to Principal/Director, 2x2 decision matrices, and executive communication.",
+  "key_takeaways": [
+    "Moving from Senior to Executive requires shifting from 'Problem Solver' to 'Problem Finder and Environment Shaper'.",
+    "Executive communication must always lead with the bottom line (BLUF: Bottom Line Up Front), expected ROI, and resource request before background context.",
+    "Use 2x2 Decision Frameworks to categorize decisions into One-Way Doors (irreversible, high-stakes) and Two-Way Doors (reversible, fast-execution).",
+    "Managing up is not brown-nosing; it is making your manager's core goals succeed while removing operational surprises."
+  ],
+  "transcript": [
+    {
+      "timestamp": "00:00:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "Welcome to Lenny's Podcast. Today my guest is Ethan Evans. Ethan spent over 15 years at Amazon, rising to Vice President where he led Prime Video tech, Appstore, and Twitch Prime, managing hundreds of engineers and product leaders. Ethan, welcome!"
+    },
+    {
+      "timestamp": "00:01:00",
+      "speaker": "Ethan Evans",
+      "text": "Thanks Lenny! Thrilled to be here to talk about leadership, executive careers, and how big tech actually operates."
+    },
+    {
+      "timestamp": "00:02:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the key difference between what gets you promoted to Senior PM versus what gets you promoted to Director or VP?"
+    },
+    {
+      "timestamp": "00:03:00",
+      "speaker": "Ethan Evans",
+      "text": "To reach Senior PM or Senior Engineer, you are rewarded for being an exceptional Problem Solver. A problem is assigned to you, and you deliver an elegant spec and ship it on time. But to become a Director or VP, you must become a Problem Finder. Nobody hands you a spec; you must identify the multi-million dollar opportunities or structural operational risks that the company is blind to, build a coalition across disparate orgs, secure capital, and create the team architecture to capture that opportunity."
+    },
+    {
+      "timestamp": "00:08:40",
+      "speaker": "Lenny Rachitsky",
+      "text": "How did Amazon use Jeff Bezos's One-Way Door vs Two-Way Door framework to maintain high decision velocity?"
+    },
+    {
+      "timestamp": "00:09:25",
+      "speaker": "Ethan Evans",
+      "text": "Most corporate bureaucracy happens because organizations treat every minor decision like an irreversible, life-or-death crisis. At Amazon, decisions are categorized into Type 1 (One-Way Doors) and Type 2 (Two-Way Doors). A Type 1 decision is irreversible—like a major M&A acquisition, a public pricing change, or a fundamental architectural rewrite. These require deep deliberation and executive consensus. A Type 2 decision is easily reversible—like an A/B test layout, a copy change, or an internal tooling trial. If you walk through a Type 2 door and don't like what you see, you can simply walk back. Type 2 decisions should be made rapidly by small teams with 70% information rather than waiting for 100% certainty."
+    },
+    {
+      "timestamp": "00:15:20",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is your rule for executive communication and writing memos?"
+    },
+    {
+      "timestamp": "00:16:05",
+      "speaker": "Ethan Evans",
+      "text": "Always use BLUF: Bottom Line Up Front. Executives have no time to read a 6-page murder mystery where the conclusion is hidden on the final page. State your recommendation, the required investment, and the expected business outcome in the very first paragraph. Then use the rest of the document to provide the supporting logic, data, and counter-arguments."
+    },
+    {
+      "timestamp": "00:22:30",
+      "speaker": "Lenny Rachitsky",
+      "text": "How does Amazon's famous 6-page narrative document work in practice?"
+    },
+    {
+      "timestamp": "00:23:15",
+      "speaker": "Ethan Evans",
+      "text": "PowerPoint is banned because slides hide sloppy thinking behind bullet points. Instead, the author writes a 6-page narrative structured with: Context, Problem, Strategic Tenets, Solution Architecture, Financials / ROI, and FAQs. The first 20 minutes of every executive meeting is spent in dead silence reading the memo. It levels the playing field—introverts and junior PMs with clear prose beat charismatic presenters with flashy slides every single time."
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "episode_id": "ep_07_lenny_rachitsky",
+  "episode_title": "Lenny Rachitsky on How to Kickstart and Scale a Two-Sided Marketplace",
+  "guest_name": "Lenny Rachitsky",
+  "guest_role": "Author of Lenny's Newsletter & Host of Lenny's Podcast, former Growth PM at Airbnb",
+  "topic": "Marketplaces, Cold Start Problem, Supply vs Demand, Liquidity, Retention",
+  "url": "https://www.youtube.com/watch?v=lenny_rachitsky_marketplaces",
+  "publication_date": "2023-01-10",
+  "summary": "Lenny Rachitsky synthesizes years of research from interviewing founders of Airbnb, Uber, DoorDash, Etsy, and Instacart on how to solve the marketplace chicken-and-egg problem, achieve initial liquidity, and scale supply and demand.",
+  "key_takeaways": [
+    "In 80%+ of successful marketplaces, supply is the constrained side that must be acquired first and manually subsidized.",
+    "Constrain your initial geographic or categorical scope aggressively (e.g. Uber in SF only, DoorDash in Palo Alto restaurants, Airbnb at tech conferences).",
+    "Liquidity is the lifeblood of a marketplace: measure search-to-fill rate or time-to-first-order rather than gross listings.",
+    "Solve the chicken-and-egg problem by creating 'single-player mode' utility for supply before network effects kick in (e.g. OpenTable table management software)."
+  ],
+  "transcript": [
+    {
+      "timestamp": "00:00:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "In this deep dive episode, I want to break down the definitive blueprint on how to kickstart and scale a two-sided marketplace, synthesized from studying the early playbooks of Airbnb, DoorDash, Uber, Thumbtack, and Etsy."
+    },
+    {
+      "timestamp": "00:01:20",
+      "speaker": "Lenny Rachitsky",
+      "text": "The first existential question every marketplace founder faces is: do I start with supply or demand? In over 80% of marketplaces, the answer is supply. If buyers show up to an empty marketplace, they leave and never return. But if suppliers list their inventory or services, they are willing to wait a few weeks for their first customer. You have to win supply first."
+    },
+    {
+      "timestamp": "00:04:30",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you acquire early supply when you have zero buyers? There are four proven tactics: 1. Direct sales / hustle: The DoorDash founders printed menus and walked into Palo Alto restaurants in person. 2. Subsidies: Uber guaranteed drivers $30/hour to sit in cars in San Francisco even if no riders requested trips. 3. Piggybacking: Airbnb famously built a script that let hosts cross-post their listings to Craigslist with one click. 4. Single-player mode: Provide standalone software that is useful to the supplier without any demand. OpenTable gave restaurants electronic reservation book software (ERB) for years before building a consumer diner app."
+    },
+    {
+      "timestamp": "00:11:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the most critical geographic constraint principle for marketplace liquidity?"
+    },
+    {
+      "timestamp": "00:11:55",
+      "speaker": "Lenny Rachitsky",
+      "text": "Hyper-constrain your initial marketplace. If you launch nationwide on day one, your supply will be so scattered across 50 cities that your search fill rate will be 2%. Instead, dominate one neighborhood, one campus, or one niche category. When Airbnb launched, they focused on high-demand event spikes—like the Democratic National Convention in Denver or SXSW in Austin—where hotels were 100% sold out. When liquidity reaches 80% in one micro-market, you bottle that playbook and expand city by city."
+    },
+    {
+      "timestamp": "00:18:00",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you measure true marketplace health?"
+    },
+    {
+      "timestamp": "00:18:40",
+      "speaker": "Lenny Rachitsky",
+      "text": "Track liquidity metrics: 1. Search-to-Book rate: What percentage of visitor searches result in a confirmed transaction? 2. Time-to-Fill: How fast does a passenger get picked up, or how fast does a freelancer get hired? 3. Cohort Repeat Rate: Are buyers purchasing again in 30, 60, 90 days? If liquidity and repeat rates are healthy, your marketplace possesses an insurmountable defensible moat."
+    },
+    {
+      "timestamp": "00:24:20",
+      "speaker": "Lenny Rachitsky",
+      "text": "How should marketplaces set their take rate, and what prevents disintermediation?"
+    },
+    {
+      "timestamp": "00:25:05",
+      "speaker": "Lenny Rachitsky",
+      "text": "Your take rate must reflect the value you provide throughout the transaction. If you charge 20% but only provide an introduction, buyers and sellers will take future transactions off-platform (disintermediation). To prevent disintermediation: 1. Provide essential workflow tools (invoicing, scheduling, escrow, insurance, ratings). 2. Make payment on-platform safer and easier than off-platform cash. 3. Align take rate with transaction frequency: high-frequency commodities (Uber) can sustain 20–25% take rates, while low-frequency high-ticket transactions (real estate) must have lower take rates (3–5%)."
+    }
+  ]
+}

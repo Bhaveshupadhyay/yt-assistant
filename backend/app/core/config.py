@@ -50,6 +50,30 @@ class Settings(BaseSettings):
         default="lenny_transcripts",
         description="Qdrant collection name for Lenny transcript chunks",
     )
+    QDRANT_STORAGE_PATH: str | None = Field(
+        default=None,
+        description="Optional path to local embedded Qdrant disk storage",
+    )
+
+    # Embedding Models (FastEmbed low-memory models)
+    EMBEDDING_DENSE_MODEL: str = Field(
+        default="sentence-transformers/all-MiniLM-L6-v2",
+        description="FastEmbed dense embedding model (~70MB RAM, 384 dimensions)",
+    )
+    EMBEDDING_SPARSE_MODEL: str = Field(
+        default="Qdrant/bm25",
+        description="FastEmbed sparse embedding model (~10MB RAM)",
+    )
+    EMBEDDING_DENSE_DIMENSION: int = Field(
+        default=384,
+        description="Vector dimension for the dense embedding model",
+    )
+
+    # Transcripts Corpus
+    TRANSCRIPTS_DIR: str = Field(
+        default="../data/transcripts",
+        description="Default path to curated transcripts corpus directory",
+    )
 
     # Local LLM (Ollama)
     OLLAMA_BASE_URL: str = Field(

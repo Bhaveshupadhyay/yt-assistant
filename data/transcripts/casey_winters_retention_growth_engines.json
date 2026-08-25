@@ -1,0 +1,68 @@
+{
+  "episode_id": "ep_08_casey_winters",
+  "episode_title": "Casey Winters on Retention Systems, Onboarding Friction, and Solving Churn",
+  "guest_name": "Casey Winters",
+  "guest_role": "Former Chief Product Officer at Eventbrite, Growth Lead at Pinterest and Grubhub",
+  "topic": "Retention, Churn Mitigation, Onboarding, Growth Engines, Product Engagement",
+  "url": "https://www.youtube.com/watch?v=casey_winters_retention",
+  "publication_date": "2023-06-22",
+  "summary": "Casey Winters details why retention is the foundation of all sustainable growth, how to measure true natural product frequency, why adding good friction during onboarding improves long-term activation, and how to scale growth engines.",
+  "key_takeaways": [
+    "Product retention determines the ceiling of your business; without retention, acquisition just increases churn rate.",
+    "Align your retention measurement with the product's natural frequency (daily, weekly, monthly, annual). Forcing a weekly cadence on a tax app causes artificial churn.",
+    "Constructive friction in onboarding (e.g. topic selection, role customization) dramatically boosts long-term activation over zero-friction signups.",
+    "There are only four true scalable growth engines: Performance Marketing, Viral/Referral, Content/SEO, and Sales-Led Outbound."
+  ],
+  "transcript": [
+    {
+      "timestamp": "00:00:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "Welcome to Lenny's Podcast. Today my guest is Casey Winters. Casey was the Chief Product Officer at Eventbrite and led early growth at Pinterest and Grubhub. Casey, welcome back!"
+    },
+    {
+      "timestamp": "00:01:00",
+      "speaker": "Casey Winters",
+      "text": "Thanks Lenny, great to be here to talk about retention and product strategy."
+    },
+    {
+      "timestamp": "00:02:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "Why do so many startups struggle to understand their true retention rate, and what is natural product frequency?"
+    },
+    {
+      "timestamp": "00:03:00",
+      "speaker": "Casey Winters",
+      "text": "The number one mistake is evaluating a product on the wrong time horizon. Every product has a natural cadence. Slack and WhatsApp are daily products. Miro and Asana are weekly products. Eventbrite and Airbnb are quarterly or annual products. TurboTax is strictly annual. If you try to measure Airbnb on daily active users (DAU/MAU ratio), you will conclude nobody retains. You must define your core value event and measure retention across cohorts based on the natural frequency of the underlying human problem."
+    },
+    {
+      "timestamp": "00:08:40",
+      "speaker": "Lenny Rachitsky",
+      "text": "You often talk about 'constructive friction' in onboarding. Why is eliminating all onboarding friction sometimes harmful?"
+    },
+    {
+      "timestamp": "00:09:25",
+      "speaker": "Casey Winters",
+      "text": "Many product teams blindly follow the rule 'fewer clicks is always better'. But when Pinterest tested skipping the onboarding topic picker to drop users immediately into a generic feed, signup completion increased by 15%, but 30-day retention collapsed by 30%. Why? Because users landed in an irrelevant, generic feed and saw no personal value. Good friction collects user intent, tailors the core experience, and sets expectations so the user experiences an unforgettable 'aha' moment."
+    },
+    {
+      "timestamp": "00:15:50",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you distinguish between feature retention and product retention?"
+    },
+    {
+      "timestamp": "00:16:35",
+      "speaker": "Casey Winters",
+      "text": "Feature retention is whether people keep using a specific button or tool inside your app. Product retention is whether they keep coming back to the product as a whole. You can launch a flashy new AI feature that has high day-one trial, but if it doesn't move baseline 90-day cohort retention of the overall product, it is just noise. Always tie feature adoption back to overall cohort retention curves."
+    },
+    {
+      "timestamp": "00:22:10",
+      "speaker": "Lenny Rachitsky",
+      "text": "What are the only four scalable growth engines in modern technology?"
+    },
+    {
+      "timestamp": "00:22:55",
+      "speaker": "Casey Winters",
+      "text": "Every tech giant has scaled on one of four fundamental engines: 1. Paid Performance Marketing (E-commerce, Uber, mobile games). 2. Virality and Word of Mouth (Slack, Zoom, TikTok, WhatsApp). 3. Content and Programmatic SEO (Pinterest, TripAdvisor, Yelp, Canva). 4. Sales-Led Outbound (Salesforce, Workday, Snowflake). Don't try to dabble in all four. Pick the single engine that natively matches your product economics and customer mindset."
+    }
+  ]
+}
