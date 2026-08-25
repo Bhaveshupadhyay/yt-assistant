@@ -4,7 +4,6 @@ Splits transcripts into 500-700 token chunks with 100-token overlap,
 preserving speaker dialogue turns, timestamp boundaries, and attaching rich metadata.
 """
 
-import hashlib
 import json
 import logging
 import re
@@ -12,7 +11,6 @@ import uuid
 from pathlib import Path
 from typing import Any
 from app.schemas.chunk import TranscriptChunk, TranscriptMetadata
-
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +49,6 @@ class TranscriptChunker:
         if not text or not text.strip():
             return 0
         words = text.strip().split()
-        # English text typically averages ~1.33 tokens per word
         return max(1, int(len(words) * 1.33))
 
     def _split_long_text_into_sentences(self, text: str) -> list[str]:
@@ -59,6 +56,22 @@ class TranscriptChunker:
         sentence_endings = re.compile(r"(?<=[.!?]) +")
         sentences = sentence_endings.split(text.strip())
         return [s.strip() for s in sentences if s.strip()]
+
+    def _split_oversized_text(self, text: str, max_chunk_tokens: int) -> list[str]:
+        """Split text that exceeds max_chunk_tokens first by sentences, then by word groups."""
+        sentences = self._split_long_text_into_sentences(text)
+        units: list[str] = []
+        for s in sentences:
+            if self.estimate_tokens(s) <= max_chunk_tokens:
+                units.append(s)
+            else:
+                # Break sentence by word chunks
+                words = s.split()
+                # max words roughly max_chunk_tokens / 1.33
+                max_words = max(1, int(max_chunk_tokens / 1.33))
+                for i in range(0, len(words), max_words):
+                    units.append(" ".join(words[i : i + max_words]))
+        return units
 
     def chunk_structured_transcript(
         self,
@@ -72,7 +85,15 @@ class TranscriptChunker:
         if not dialogue_turns:
             return []
 
-        # 1. Expand turns into atomic units (turn or split sentence if turn is massive)
+        # Estimated header token budget to ensure total chunk size is within max_tokens
+        sample_header = (
+            f"[{metadata.guest_name} | {metadata.episode_title} | "
+            f"Topic: {metadata.topic} | Time: 00:00:00 - 00:00:00]"
+        )
+        header_tokens_budget = self.estimate_tokens(sample_header) + 4
+        effective_max = max(self.min_tokens + 20, self.max_tokens - header_tokens_budget)
+
+        # 1. Expand turns into atomic units
         units: list[dict[str, Any]] = []
         for turn in dialogue_turns:
             speaker = turn.get("speaker", "Speaker")
@@ -81,22 +102,27 @@ class TranscriptChunker:
             if not text:
                 continue
 
-            turn_tokens = self.estimate_tokens(text)
-            if turn_tokens > self.max_tokens:
-                # Break large monologue into sentence units
-                sentences = self._split_long_text_into_sentences(text)
-                for sentence in sentences:
+            speaker_prefix = f"{speaker}: "
+            prefix_tokens = self.estimate_tokens(speaker_prefix)
+            available_turn_tokens = effective_max - prefix_tokens
+
+            turn_tokens = self.estimate_tokens(f"{speaker_prefix}{text}")
+            if turn_tokens > effective_max:
+                # Subdivide oversized text by sentences / words
+                sub_texts = self._split_oversized_text(text, max_chunk_tokens=available_turn_tokens)
+                for st in sub_texts:
+                    formatted_line = f"{speaker_prefix}{st}"
                     units.append({
                         "speaker": speaker,
-                        "text": f"{speaker}: {sentence}",
-                        "raw_text": sentence,
+                        "text": formatted_line,
+                        "raw_text": st,
                         "timestamp": timestamp,
-                        "tokens": self.estimate_tokens(sentence),
+                        "tokens": self.estimate_tokens(formatted_line),
                     })
             else:
                 units.append({
                     "speaker": speaker,
-                    "text": f"{speaker}: {text}",
+                    "text": f"{speaker_prefix}{text}",
                     "raw_text": text,
                     "timestamp": timestamp,
                     "tokens": turn_tokens,
@@ -111,9 +137,8 @@ class TranscriptChunker:
 
         for unit in units:
             unit_tokens = unit["tokens"]
-            # If adding this unit exceeds max_tokens and we already meet min_tokens, seal chunk
-            if curr_tokens + unit_tokens > self.max_tokens and curr_tokens >= self.min_tokens:
-                # Seal current chunk
+            # If adding this unit exceeds effective_max and we already meet min_tokens, seal chunk
+            if curr_tokens + unit_tokens > effective_max and curr_tokens >= self.min_tokens:
                 raw_chunks.append({
                     "units": list(curr_units),
                     "start_timestamp": curr_units[0]["timestamp"],
@@ -212,14 +237,12 @@ class TranscriptChunker:
             if isinstance(dialogue_turns, list) and dialogue_turns and isinstance(dialogue_turns[0], dict):
                 return self.chunk_structured_transcript(metadata, dialogue_turns)
             elif isinstance(dialogue_turns, str):
-                # Turn string into a single turn
                 return self.chunk_structured_transcript(
                     metadata, [{"speaker": metadata.guest_name, "text": dialogue_turns, "timestamp": "00:00:00"}]
                 )
             else:
-                return []
+                raise ValueError(f"Invalid or empty transcript format in {path.name}")
         else:
-            # Handle plain text / markdown file
             metadata = TranscriptMetadata(
                 episode_id=path.stem,
                 episode_title=path.stem.replace("_", " ").title(),
@@ -232,13 +255,19 @@ class TranscriptChunker:
                 metadata, [{"speaker": "Speaker", "text": content_raw, "timestamp": "00:00:00"}]
             )
 
-    def chunk_directory(self, dir_path: Path | str) -> list[TranscriptChunk]:
-        """Recursively scan and chunk all transcript files in a directory."""
+    def chunk_directory(self, dir_path: Path | str, strict: bool = True) -> list[TranscriptChunk]:
+        """Recursively scan and chunk all transcript files in a directory.
+
+        Args:
+            dir_path: Directory containing transcript files.
+            strict: If True, raises RuntimeError if any transcript file fails to parse or chunk.
+        """
         path = Path(dir_path)
         if not path.is_dir():
             raise NotADirectoryError(f"Transcripts directory not found: {dir_path}")
 
         all_chunks: list[TranscriptChunk] = []
+        failed_files: dict[str, str] = {}
         files = sorted(list(path.glob("*.json")) + list(path.glob("*.md")) + list(path.glob("*.txt")))
 
         logger.info(f"Discovered {len(files)} transcript files in {dir_path}")
@@ -249,5 +278,11 @@ class TranscriptChunker:
                 logger.debug(f"Chunked {file.name}: {len(chunks)} chunks generated.")
             except Exception as exc:
                 logger.error(f"Failed to chunk {file.name}: {exc}", exc_info=True)
+                failed_files[file.name] = str(exc)
+
+        if failed_files and strict:
+            raise RuntimeError(
+                f"Transcript chunking failed for {len(failed_files)} file(s) in {dir_path}: {failed_files}"
+            )
 
         return all_chunks

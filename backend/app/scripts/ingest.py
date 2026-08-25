@@ -24,7 +24,11 @@ logging.basicConfig(
 logger = logging.getLogger("ingest_cli")
 
 
-def get_resilient_qdrant_client(settings: Settings, explicit_url: str | None = None, explicit_path: str | None = None) -> tuple[QdrantClient, str]:
+def get_resilient_qdrant_client(
+    settings: Settings,
+    explicit_url: str | None = None,
+    explicit_path: str | None = None,
+) -> tuple[QdrantClient, str]:
     """Connect to remote Qdrant if reachable, or gracefully fall back to local disk storage."""
     target_url = explicit_url or settings.QDRANT_URL
     target_path = explicit_path or settings.QDRANT_STORAGE_PATH
@@ -67,16 +71,17 @@ def run_ingestion(
     min_tokens: int = 500,
     max_tokens: int = 700,
     overlap_tokens: int = 100,
+    close_client: bool = True,
 ) -> dict:
     """Execute the full chunking and hybrid vector ingestion pipeline."""
     start_time = time.time()
     settings = get_settings()
 
-    # 1. Resolve transcripts directory
-    input_path = Path(transcripts_dir) if transcripts_dir else find_default_transcripts_dir()
+    # 1. Resolve transcripts directory using settings
+    input_path = Path(transcripts_dir) if transcripts_dir else find_default_transcripts_dir(settings)
     if not input_path.exists():
         logger.error(f"Transcripts corpus directory not found at: {input_path}")
-        sys.exit(1)
+        raise FileNotFoundError(f"Transcripts corpus directory not found at: {input_path}")
 
     logger.info(f"1. Scanning transcripts corpus from: {input_path}")
     chunker = TranscriptChunker(
@@ -84,58 +89,66 @@ def run_ingestion(
         max_tokens=max_tokens,
         overlap_tokens=overlap_tokens,
     )
-    chunks = chunker.chunk_directory(input_path)
+    chunks = chunker.chunk_directory(input_path, strict=True)
     if not chunks:
         logger.error("No transcript chunks could be generated.")
-        sys.exit(1)
+        raise ValueError("No transcript chunks could be generated.")
 
     logger.info(f"Generated {len(chunks)} semantic chunks across corpus.")
 
     # 2. Connect to Qdrant
     logger.info("2. Initializing Qdrant connection and vector store...")
     client, conn_desc = get_resilient_qdrant_client(settings, explicit_url=qdrant_url, explicit_path=storage_path)
-    vector_store = HybridVectorStore(settings=settings, client=client)
 
-    # 3. Prepare collection
-    logger.info(f"3. Setting up collection '{settings.QDRANT_COLLECTION_NAME}' (recreate={recreate})...")
-    vector_store.ensure_collection(recreate=recreate)
+    try:
+        vector_store = HybridVectorStore(settings=settings, client=client)
 
-    # 4. Upsert chunks
-    logger.info(f"4. Indexing hybrid dense + sparse vectors (batch size: {batch_size})...")
-    upserted = vector_store.upsert_chunks(chunks=chunks, batch_size=batch_size)
+        # 3. Prepare collection
+        logger.info(f"3. Setting up collection '{settings.QDRANT_COLLECTION_NAME}' (recreate={recreate})...")
+        vector_store.ensure_collection(recreate=recreate)
 
-    # 5. Fetch stats
-    stats = vector_store.get_collection_stats()
-    duration = time.time() - start_time
+        # 4. Upsert chunks
+        logger.info(f"4. Indexing hybrid dense + sparse vectors (batch size: {batch_size})...")
+        upserted = vector_store.upsert_chunks(chunks=chunks, batch_size=batch_size)
 
-    # 6. Pretty print report
-    print("\n" + "=" * 65)
-    print("🚀  LENNY GROWTH ASSISTANT — HYBRID INGESTION MILESTONE")
-    print("=" * 65)
-    print(f"Status              : SUCCESS")
-    print(f"Target Collection   : {stats.get('collection_name')}")
-    print(f"Qdrant Backend      : {conn_desc}")
-    print(f"Total Points Count  : {stats.get('points_count')} points")
-    print(f"Dense Model         : {stats.get('dense_model')} (dim: {stats.get('dense_dim')})")
-    print(f"Sparse Model        : {stats.get('sparse_model')}")
-    print(f"Total Chunks Indexed: {upserted}")
-    print(f"Duration            : {duration:.2f} seconds")
-    print("-" * 65)
-    print("Indexed Guest Episodes:")
-    guest_counts: dict[str, int] = {}
-    for c in chunks:
-        guest_counts[c.guest_name] = guest_counts.get(c.guest_name, 0) + 1
-    for guest, count in sorted(guest_counts.items()):
-        print(f"  • {guest:<25} [{count} chunks]")
-    print("=" * 65 + "\n")
+        # 5. Fetch stats
+        stats = vector_store.get_collection_stats()
+        duration = time.time() - start_time
 
-    return {
-        "status": "success",
-        "points_count": stats.get("points_count"),
-        "collection_name": stats.get("collection_name"),
-        "chunks_indexed": upserted,
-        "duration_seconds": duration,
-    }
+        # 6. Pretty print report
+        print("\n" + "=" * 65)
+        print("🚀  LENNY GROWTH ASSISTANT — HYBRID INGESTION MILESTONE")
+        print("=" * 65)
+        print("Status              : SUCCESS")
+        print(f"Target Collection   : {stats.get('collection_name')}")
+        print(f"Qdrant Backend      : {conn_desc}")
+        print(f"Total Points Count  : {stats.get('points_count')} points")
+        print(f"Dense Model         : {stats.get('dense_model')} (dim: {stats.get('dense_dim')})")
+        print(f"Sparse Model        : {stats.get('sparse_model')}")
+        print(f"Total Chunks Indexed: {upserted}")
+        print(f"Duration            : {duration:.2f} seconds")
+        print("-" * 65)
+        print("Indexed Guest Episodes:")
+        guest_counts: dict[str, int] = {}
+        for c in chunks:
+            guest_counts[c.guest_name] = guest_counts.get(c.guest_name, 0) + 1
+        for guest, count in sorted(guest_counts.items()):
+            print(f"  • {guest:<25} [{count} chunks]")
+        print("=" * 65 + "\n")
+
+        return {
+            "status": "success",
+            "points_count": stats.get("points_count"),
+            "collection_name": stats.get("collection_name"),
+            "chunks_indexed": upserted,
+            "duration_seconds": duration,
+        }
+    finally:
+        if close_client and client is not None:
+            try:
+                client.close()
+            except Exception as exc:
+                logger.debug(f"Error closing QdrantClient: {exc}")
 
 
 def main() -> None:
@@ -178,13 +191,17 @@ def main() -> None:
     )
 
     args = parser.parse_args()
-    run_ingestion(
-        transcripts_dir=args.transcripts_dir,
-        recreate=args.recreate,
-        batch_size=args.batch_size,
-        qdrant_url=args.qdrant_url,
-        storage_path=args.storage_path,
-    )
+    try:
+        run_ingestion(
+            transcripts_dir=args.transcripts_dir,
+            recreate=args.recreate,
+            batch_size=args.batch_size,
+            qdrant_url=args.qdrant_url,
+            storage_path=args.storage_path,
+        )
+    except Exception as exc:
+        logger.error(f"Ingestion failed: {exc}")
+        sys.exit(1)
 
 
 if __name__ == "__main__":

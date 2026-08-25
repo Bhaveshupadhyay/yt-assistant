@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 import pytest
+from app.core.config import Settings
 from app.schemas.chunk import TranscriptChunk, TranscriptMetadata
 from app.scripts.chunker import find_default_transcripts_dir
 from app.services.chunker import TranscriptChunker
@@ -83,6 +84,26 @@ def test_chunk_structured_transcript() -> None:
         assert chunk.citation_label.startswith("Test Guest in 'Testing Episode Title'")
 
 
+def test_chunker_oversized_sentence_budget() -> None:
+    """Test chunker correctly breaks massive single-sentence turns without exceeding max_tokens."""
+    chunker = TranscriptChunker(min_tokens=50, max_tokens=120, overlap_tokens=20)
+    metadata = TranscriptMetadata(
+        episode_id="ep_long",
+        episode_title="Long Monologue",
+        guest_name="Long Speaker",
+        guest_role="Monologue Specialist",
+        topic="Strategy",
+        url="https://example.com",
+    )
+    long_sentence = "This is a single massive unbroken run-on sentence discussing growth loops and retention systems repeatedly " * 30
+    dialogue = [{"timestamp": "00:00:00", "speaker": "Long Speaker", "text": long_sentence}]
+
+    chunks = chunker.chunk_structured_transcript(metadata, dialogue)
+    assert len(chunks) > 1
+    for c in chunks:
+        assert c.token_count <= 160  # Header + budget comfortably bounded
+
+
 def test_chunker_empty_input() -> None:
     """Test chunker handles empty dialogue gracefully."""
     chunker = TranscriptChunker(min_tokens=100, max_tokens=200, overlap_tokens=20)
@@ -159,3 +180,23 @@ def test_chunk_file_json_and_plain_text(tmp_path: Path) -> None:
     txt_chunks = chunker.chunk_file(txt_path)
     assert len(txt_chunks) >= 1
     assert txt_chunks[0].episode_id == "sample_notes"
+
+
+def test_chunk_directory_strict_mode_raises(tmp_path: Path) -> None:
+    """Test that chunk_directory raises RuntimeError when a malformed file is encountered in strict mode."""
+    chunker = TranscriptChunker(min_tokens=50, max_tokens=100, overlap_tokens=10)
+    bad_file = tmp_path / "broken_transcript.json"
+    bad_file.write_text("{ broken json content", encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="Transcript chunking failed"):
+        chunker.chunk_directory(tmp_path, strict=True)
+
+
+def test_find_default_transcripts_dir_respects_settings(tmp_path: Path) -> None:
+    """Test find_default_transcripts_dir respects Settings.TRANSCRIPTS_DIR."""
+    custom_dir = tmp_path / "custom_transcripts"
+    custom_dir.mkdir(parents=True)
+    custom_settings = Settings(TRANSCRIPTS_DIR=str(custom_dir))
+
+    resolved = find_default_transcripts_dir(custom_settings)
+    assert resolved == custom_dir.resolve()

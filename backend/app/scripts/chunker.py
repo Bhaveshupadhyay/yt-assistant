@@ -10,6 +10,8 @@ import json
 import logging
 import sys
 from pathlib import Path
+from typing import Any
+from app.core.config import Settings, get_settings
 from app.services.chunker import TranscriptChunker
 
 logging.basicConfig(
@@ -19,19 +21,26 @@ logging.basicConfig(
 logger = logging.getLogger("chunker_cli")
 
 
-def find_default_transcripts_dir() -> Path:
-    """Intelligently locate the transcripts directory from common execution locations."""
+def find_default_transcripts_dir(settings: Settings | None = None) -> Path:
+    """Locate transcripts directory using Settings.TRANSCRIPTS_DIR with fallback search."""
+    cfg = settings or get_settings()
+
+    configured_path = Path(cfg.TRANSCRIPTS_DIR)
+    if configured_path.exists() and (configured_path.is_dir() or configured_path.is_file()):
+        return configured_path.resolve()
+
     candidates = [
+        configured_path,
         Path("data/transcripts"),
         Path("../data/transcripts"),
         Path(__file__).resolve().parent.parent.parent.parent / "data" / "transcripts",
         Path(__file__).resolve().parent.parent.parent / "data" / "transcripts",
     ]
     for p in candidates:
-        if p.exists() and p.is_dir():
+        if p.exists() and (p.is_dir() or p.is_file()):
             return p.resolve()
-    # Default fallback
     return Path("../data/transcripts").resolve()
+
 
 
 def main() -> None:
