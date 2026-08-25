@@ -1,0 +1,88 @@
+{
+  "episode_id": "ep_03_shreyas_doshi",
+  "episode_title": "Shreyas Doshi on High-Agency Product Management, the LNO Framework, and Building Radically Good Products",
+  "guest_name": "Shreyas Doshi",
+  "guest_role": "Former Product Leader at Stripe, Twitter, Google, Yahoo",
+  "topic": "Product Management, High Agency, LNO Framework, Product Strategy, Pre-mortems",
+  "url": "https://www.youtube.com/watch?v=0kF3aPqL1m0",
+  "publication_date": "2022-09-15",
+  "summary": "Shreyas Doshi shares his most impactful mental models for product managers and operators, including the LNO Framework for time management, how to cultivate high agency, the difference between good and radically good products, and conducting pre-mortems.",
+  "key_takeaways": [
+    "The LNO Framework categorizes work into Leverage (10x impact), Neutral (1x impact), and Overhead (<1x impact) to avoid PM burnout and maximize leverage.",
+    "High agency is the ability to bend reality to your will to achieve goals despite obstacles, bureaucracy, and lack of clear authority.",
+    "A 'Radically Good Product' solves a neglected user problem with uncommonly high craftsmanship and deliberate trade-offs.",
+    "Conduct pre-mortems before project kickoff by assuming the product has failed catastrophically 12 months from now and diagnosing why."
+  ],
+  "transcript": [
+    {
+      "timestamp": "00:00:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "Welcome to Lenny's Podcast. My guest today is Shreyas Doshi. Shreyas is arguably the most influential product thinker of our generation, having held product leadership roles at Stripe, Twitter, Google, and Yahoo. Shreyas, it's an honor to have you."
+    },
+    {
+      "timestamp": "00:01:00",
+      "speaker": "Shreyas Doshi",
+      "text": "Thank you Lenny, it is wonderful to be here and chat with your audience."
+    },
+    {
+      "timestamp": "00:02:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "One of your most widely shared frameworks is the LNO Framework for personal productivity and leverage. What is it, and how does it prevent PM burnout?"
+    },
+    {
+      "timestamp": "00:03:05",
+      "speaker": "Shreyas Doshi",
+      "text": "Most PMs suffer from what I call 'perfectionist exhaustion'\u2014they attempt to give 100% effort to every single email, spec, and status update. The LNO framework divides all tasks into three categories: 'L' tasks are Leverage tasks. These are high-impact, high-leverage activities\u2014like writing your core product strategy memo, defining pricing principles, or hiring key leaders. Here, doing a 10x job creates a 100x outcome. 'N' tasks are Neutral tasks. These are standard operational duties\u2014routine bug triage, sprint planning, standard PRDs. You should aim for 'good enough' and execute them efficiently at 1x quality. 'O' tasks are Overhead tasks\u2014mandatory compliance training, low-priority status reports, admin forms. You should actively minimize, delegate, or do them as quickly and cheaply as possible (0.5x effort). By consciously spending 80% of your creative energy on Leverage tasks, you dramatically multiply your business impact without increasing work hours."
+    },
+    {
+      "timestamp": "00:09:40",
+      "speaker": "Lenny Rachitsky",
+      "text": "You talk often about 'High Agency'. How do you define high agency in a product leader, and how can someone develop it?"
+    },
+    {
+      "timestamp": "00:10:30",
+      "speaker": "Shreyas Doshi",
+      "text": "High agency is the determination and creative persistence to find a path to your goal when the default path is blocked. When a low-agency person runs into a roadblock\u2014whether it's lack of engineering resources, legal pushback, or ambiguous executive guidance\u2014they say 'Well, I tried, but management said no.' A high-agency person asks: 'What is the root concern of legal? Can we descope the sensitive feature? Can I build a prototype myself or borrow a contract engineer?' High agency is recognizing that most rules are guidelines, and with genuine empathy and creative problem solving, you can bend reality to achieve what initially seemed impossible."
+    },
+    {
+      "timestamp": "00:16:50",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the difference between a good product and a radically good product?"
+    },
+    {
+      "timestamp": "00:17:40",
+      "speaker": "Shreyas Doshi",
+      "text": "A good product satisfies table-stakes customer requirements\u2014it's functional, reliable, and decent. A radically good product evokes an emotional reaction because it has solved a deep, previously neglected pain point with astonishing clarity. Think of early Stripe: developers hated merchant account setup and 50-page PDF paperwork. Stripe gave them 7 lines of code and instant test keys. Radically good products require saying 'no' to 90% of generic feature requests to obsessively over-index on one magical experience."
+    },
+    {
+      "timestamp": "00:24:10",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you run a project Pre-Mortem?"
+    },
+    {
+      "timestamp": "00:24:55",
+      "speaker": "Shreyas Doshi",
+      "text": "Before you write code, bring engineering, design, data, and marketing into a room. Say: 'It is one year in the future. We launched this product, and it was a complete and utter disaster. Customers hate it, it caused outages, and adoption is zero. Write down why it failed.' Everyone writes privately for 5 minutes. You surface the elephant in the room\u2014hidden technical debt, misaligned incentives, or flawed customer assumptions\u2014and address those fatal risks before writing a single line of code."
+    },
+    {
+      "timestamp": "00:30:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "What are your three PM Archetypes, and why does matching the archetype to the company stage matter so much?"
+    },
+    {
+      "timestamp": "00:31:00",
+      "speaker": "Shreyas Doshi",
+      "text": "The three PM archetypes are: 1. The Builder (0 to 1): Thrives in ambiguity, prototypes rapidly, talks to customers, unbothered by lack of process. 2. The Optimizer (1 to 10): Masters growth loops, conversion funnels, A/B testing, and operational rigor. 3. The Fixer / Operator (10 to 100): Excels at untangling org complexity, technical debt, platform migrations, and cross-functional alignment. Hiring an Optimizer for a 0-to-1 product leads to premature optimization, while hiring a Builder for a scale-up creates chaos."
+    },
+    {
+      "timestamp": "00:37:00",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the hallmark of a truly great Product Requirements Document (PRD)?"
+    },
+    {
+      "timestamp": "00:37:45",
+      "speaker": "Shreyas Doshi",
+      "text": "A great PRD clarifies the 'Why' and 'What', not just the 'How'. It defines the precise customer problem in empathetic detail, provides explicit non-goals (what we are deliberately choosing NOT to build), states the key trade-offs, and specifies the testable success metrics. If an engineer reads your PRD and cannot explain why a proposed edge case should be rejected without asking you, the PRD has failed."
+    }
+  ]
+}

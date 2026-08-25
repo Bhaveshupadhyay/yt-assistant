@@ -1,0 +1,68 @@
+{
+  "episode_id": "ep_10_gibson_biddle",
+  "episode_title": "Gibson Biddle on Product Strategy, the DHM Model, and Proxy Metrics at Netflix",
+  "guest_name": "Gibson Biddle",
+  "guest_role": "Former VP of Product at Netflix and Chegg",
+  "topic": "Product Strategy, DHM Model, Proxy Metrics, A/B Testing, Strategy Ladders",
+  "url": "https://www.youtube.com/watch?v=1aB2cPqL3m4",
+  "publication_date": "2022-10-20",
+  "summary": "Gibson Biddle explains the DHM framework (Delight customers in Hard-to-copy, Margin-enhancing ways), how to define sensitive proxy metrics for high-level business goals, and how Netflix tested its way from DVDs to global streaming.",
+  "key_takeaways": [
+    "The DHM Model: Your product strategy must answer how you will Delight customers in Hard-to-copy, Margin-enhancing ways.",
+    "Hard-to-copy advantages include network effects, unique technology, economies of scale, switching costs, and brand trust.",
+    "Proxy metrics bridge the gap between high-level lag metrics (retention, revenue) and day-to-day product experiments.",
+    "Product strategy is not a list of features; it is a hypothesis on what bets will create long-term enterprise value."
+  ],
+  "transcript": [
+    {
+      "timestamp": "00:00:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "Welcome to Lenny's Podcast. Today my guest is Gibson Biddle. Gib was the VP of Product at Netflix from 2005 to 2010, where he helped define Netflix's iconic personalization engine and streaming strategy, and later CPO at Chegg. Gib, welcome!"
+    },
+    {
+      "timestamp": "00:01:00",
+      "speaker": "Gibson Biddle",
+      "text": "Thanks Lenny! Excited to talk about product strategy, delight, and proxy metrics."
+    },
+    {
+      "timestamp": "00:02:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the DHM Model, and how did Netflix use it to make billion-dollar strategic bets?"
+    },
+    {
+      "timestamp": "00:03:00",
+      "speaker": "Gibson Biddle",
+      "text": "DHM stands for Delight, Hard-to-copy, and Margin-enhancing. As product leaders, our job is not just to make customers happy. If you just delight customers, you could lower your price to zero or give away free iPads\u2014customers would be delighted, but you would go bankrupt. You must delight them in ways that are hard for competitors to copy (like Netflix's personalization algorithm, proprietary encoding tech, and global content scale) AND in ways that enhance your profit margins (like reducing churn, enabling pricing power, or lowering customer support costs)."
+    },
+    {
+      "timestamp": "00:08:45",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you define a sensitive 'Proxy Metric', and why is relying solely on retention dangerous in A/B tests?"
+    },
+    {
+      "timestamp": "00:09:30",
+      "speaker": "Gibson Biddle",
+      "text": "Retention is a lagging metric. If you run a 2-week A/B test on an onboarding change or recommendation algorithm, monthly retention will rarely move by a statistically significant amount. You need a proxy metric\u2014a leading indicator that moves quickly in a test and is mathematically proven to correlate with long-term retention. At Netflix, our proxy metric for personalization was: 'Percentage of members who add at least 3 titles to their queue in their first session.' If a test moved that proxy metric by 2%, we knew with 95% confidence that 90-day retention would improve."
+    },
+    {
+      "timestamp": "00:15:40",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the Strategy Ladder?"
+    },
+    {
+      "timestamp": "00:16:25",
+      "speaker": "Gibson Biddle",
+      "text": "A Strategy Ladder steps your company through strategic focus areas over time. For Netflix: Step 1 (2005) was DVD delivery speed. Step 2 (2007) was the transition to streaming. Step 3 (2010) was device ubiquity (Xbox, PlayStation, Apple TV). Step 4 (2013) was original content (House of Cards). Step 5 was global internationalization. You don't do everything at once; you climb the ladder one strategic rung at a time."
+    },
+    {
+      "timestamp": "00:22:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "How did Netflix's culture of Consumer Science evolve through rigorous A/B testing?"
+    },
+    {
+      "timestamp": "00:23:00",
+      "speaker": "Gibson Biddle",
+      "text": "Consumer Science is the combination of user research, qualitative feedback, design thinking, and A/B test statistics. At Netflix, only about 1 in 3 product ideas actually proved to be statistically positive in an A/B test. If you don't run controlled experiments, you will ship 2 bad ideas for every good one without ever knowing it. Embracing humility and testing your convictions against hard data is the superpower of great product organizations."
+    }
+  ]
+}

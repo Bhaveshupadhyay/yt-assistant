@@ -1,0 +1,68 @@
+{
+  "episode_id": "ep_11_dan_olsen",
+  "episode_title": "Dan Olsen on the Lean Product Playbook, the PMF Pyramid, and Problem vs. Solution Space",
+  "guest_name": "Dan Olsen",
+  "guest_role": "Author of 'The Lean Product Playbook', Product Consultant & Trainer",
+  "topic": "Lean Product, Product-Market Fit Pyramid, Problem Space, Solution Space, MVP Design",
+  "url": "https://www.youtube.com/watch?v=2bC3dPqL4m5",
+  "publication_date": "2023-08-17",
+  "summary": "Dan Olsen shares his hierarchical Product-Market Fit Pyramid framework, how to rigorously separate the Problem Space from the Solution Space, and how to scope a true Minimum Viable Product (MVP) that avoids building the wrong thing.",
+  "key_takeaways": [
+    "The Product-Market Fit Pyramid consists of 5 layers: Target Customer, Underserved Needs, Value Proposition, Feature Set, and User Experience (UX).",
+    "Separating Problem Space (what customer problem needs solving) from Solution Space (how code/design implements it) prevents premature feature commitment.",
+    "An MVP must test a thin slice of the complete value proposition (functional, reliable, usable, and delightful) rather than delivering a broken, unpolished product.",
+    "Prioritize underserved needs by plotting Customer Importance versus Current Satisfaction."
+  ],
+  "transcript": [
+    {
+      "timestamp": "00:00:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "Welcome to Lenny's Podcast. Today my guest is Dan Olsen. Dan is a product management consultant and author of the classic book 'The Lean Product Playbook'. Dan, welcome!"
+    },
+    {
+      "timestamp": "00:01:00",
+      "speaker": "Dan Olsen",
+      "text": "Thanks Lenny, it's great to be on the show to discuss lean product development and finding product-market fit."
+    },
+    {
+      "timestamp": "00:02:10",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the Product-Market Fit Pyramid, and how does it help teams systematically achieve PMF?"
+    },
+    {
+      "timestamp": "00:02:55",
+      "speaker": "Dan Olsen",
+      "text": "The PMF Pyramid is a 5-layer hierarchical model. The bottom two layers belong to the Market: 1. Target Customer (who you are serving), and 2. Underserved Needs (the specific customer pains or desires that existing solutions fail to satisfy). The top three layers belong to your Product: 3. Value Proposition (which underserved needs you will uniquely address), 4. Feature Set (the core functionality you build), and 5. User Experience (UX\u2014the design and interface). Product-Market Fit is the resonance between your top three layers and the bottom two layers. When a product fails, teams usually jump straight to redesigning the UI (Layer 5) when their actual mistake was misunderstanding the underserved customer need (Layer 2)."
+    },
+    {
+      "timestamp": "00:08:40",
+      "speaker": "Lenny Rachitsky",
+      "text": "Can you explain the difference between Problem Space and Solution Space?"
+    },
+    {
+      "timestamp": "00:09:25",
+      "speaker": "Dan Olsen",
+      "text": "Problem Space is a description of the customer's goal, context, and pain points without mentioning any specific technology or UI implementation. Solution Space is the concrete product, software, or design built to solve that problem. When a customer says 'I need a button to export data to CSV', that is a Solution Space request. The PM's job is to step back into the Problem Space and ask: 'Why do you need that CSV? What analysis are you performing?' Often you discover that what they really needed was an automated Slack digest or real-time dashboard."
+    },
+    {
+      "timestamp": "00:15:15",
+      "speaker": "Lenny Rachitsky",
+      "text": "What is the biggest misconception about Minimum Viable Products (MVPs)?"
+    },
+    {
+      "timestamp": "00:16:00",
+      "speaker": "Dan Olsen",
+      "text": "Teams often build an MVP that is purely functional, but completely buggy, unusable, and ugly. That does not validate customer demand; it only validates that users dislike buggy software. A great MVP is a vertical slice across the hierarchy: it must be Functional, Reliable, Usable, AND emotionally Delightful, even if it solves only one single micro-problem."
+    },
+    {
+      "timestamp": "00:21:40",
+      "speaker": "Lenny Rachitsky",
+      "text": "How do you use the Importance vs. Satisfaction framework to spot high-opportunity product gaps?"
+    },
+    {
+      "timestamp": "00:22:25",
+      "speaker": "Dan Olsen",
+      "text": "Survey your target customers on two 1-to-7 scales for every user need: 1. How Important is this need to your workflow? 2. How Satisfied are you with your existing solution? Calculate the Opportunity Score: Opportunity = Importance + Max(Importance - Satisfaction, 0). When a need has high importance (6 or 7) and low satisfaction (1 or 2), you have struck gold. That is an underserved need where a 10x product will instantly win market share."
+    }
+  ]
+}

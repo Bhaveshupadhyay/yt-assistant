@@ -8,10 +8,12 @@ from app.core.clients import (
     close_all_clients,
     get_anthropic_client,
     get_async_engine,
+    get_dense_embedding_model,
     get_ollama_client,
     get_openai_client,
     get_qdrant_client,
     get_session_factory,
+    get_sparse_embedding_model,
     init_all_clients,
 )
 from app.core.config import Settings
@@ -60,6 +62,17 @@ def test_utils_clients_proxy():
     """Verify app.utils.clients correctly re-exports core.clients functions."""
     engine = utils_get_async_engine()
     assert isinstance(engine, AsyncEngine)
+
+
+def test_embedding_models_caching_by_name():
+    """Verify dense and sparse embedding models are cached per model name."""
+    m1 = get_dense_embedding_model("BAAI/bge-base-en-v1.5")
+    m2 = get_dense_embedding_model("BAAI/bge-base-en-v1.5")
+    assert m1 is m2
+
+    s1 = get_sparse_embedding_model("prithivida/Splade_PP_en_v1")
+    s2 = get_sparse_embedding_model("prithivida/Splade_PP_en_v1")
+    assert s1 is s2
 
 
 @pytest.mark.asyncio

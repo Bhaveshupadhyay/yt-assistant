@@ -29,10 +29,12 @@ logger = logging.getLogger(__name__)
 
 # Global client / pool singletons
 _qdrant_client: AsyncQdrantClient | None = None
+_qdrant_sync_client: Any | None = None
 _ollama_client: httpx.AsyncClient | None = None
 _anthropic_client: httpx.AsyncClient | None = None
 _openai_client: httpx.AsyncClient | None = None
-_fastembed_model: Any | None = None
+_dense_embedding_models: dict[str, Any] = {}
+_sparse_embedding_models: dict[str, Any] = {}
 
 
 # ==========================================
@@ -62,48 +64,116 @@ async def close_database_engine() -> None:
 
 
 # ==========================================
-# 2. Qdrant Vector Database Client (Async)
+# 2. Qdrant Vector Database Clients (Async & Sync)
 # ==========================================
+def _resolve_effective_qdrant_path(cfg: Settings) -> str | None:
+    """Check if an explicit or default local Qdrant storage path exists on disk."""
+    if cfg.QDRANT_STORAGE_PATH:
+        return cfg.QDRANT_STORAGE_PATH
+    import os
+    from pathlib import Path
+    for candidate in ["data/qdrant_storage", "../data/qdrant_storage", "backend/data/qdrant_storage"]:
+        if os.path.exists(candidate) and os.path.isdir(candidate):
+            return str(Path(candidate).resolve())
+    return None
+
+
 def get_qdrant_client(settings: Settings | None = None) -> AsyncQdrantClient:
     """Return or lazily create the asynchronous Qdrant client singleton."""
     global _qdrant_client
     if _qdrant_client is None:
         cfg = settings or get_settings()
-        logger.info(f"Initializing AsyncQdrantClient for URL: {cfg.QDRANT_URL}")
-        _qdrant_client = AsyncQdrantClient(
-            url=cfg.QDRANT_URL,
-            api_key=cfg.QDRANT_API_KEY,
-            timeout=10.0,
-            check_compatibility=False,
-        )
+        local_path = _resolve_effective_qdrant_path(cfg)
+        if local_path and not cfg.QDRANT_API_KEY:
+            logger.info(f"Initializing AsyncQdrantClient with local storage path: {local_path}")
+            _qdrant_client = AsyncQdrantClient(path=local_path)
+        else:
+            logger.info(f"Initializing AsyncQdrantClient for URL: {cfg.QDRANT_URL}")
+            _qdrant_client = AsyncQdrantClient(
+                url=cfg.QDRANT_URL,
+                api_key=cfg.QDRANT_API_KEY,
+                timeout=10.0,
+                check_compatibility=False,
+            )
     return _qdrant_client
 
 
+def get_qdrant_sync_client(settings: Settings | None = None) -> Any:
+    """Return or lazily create the synchronous Qdrant client for data ingestion and scripts."""
+    global _qdrant_sync_client
+    if _qdrant_sync_client is None:
+        from qdrant_client import QdrantClient
+
+        cfg = settings or get_settings()
+        local_path = _resolve_effective_qdrant_path(cfg)
+        if local_path and not cfg.QDRANT_API_KEY:
+            logger.info(f"Initializing QdrantClient with local storage path: {local_path}")
+            _qdrant_sync_client = QdrantClient(path=local_path)
+        else:
+            logger.info(f"Initializing QdrantClient for URL: {cfg.QDRANT_URL}")
+            _qdrant_sync_client = QdrantClient(
+                url=cfg.QDRANT_URL,
+                api_key=cfg.QDRANT_API_KEY,
+                timeout=10.0,
+                check_compatibility=False,
+            )
+    return _qdrant_sync_client
+
+
 async def close_qdrant_client() -> None:
-    """Close Qdrant client connection."""
-    global _qdrant_client
+    """Close Qdrant client connections."""
+    global _qdrant_client, _qdrant_sync_client
     if _qdrant_client is not None:
         logger.info("Closing AsyncQdrantClient connection...")
         try:
             await _qdrant_client.close()
         finally:
             _qdrant_client = None
+    if _qdrant_sync_client is not None:
+        try:
+            _qdrant_sync_client.close()
+        finally:
+            _qdrant_sync_client = None
 
 
 # ==========================================
-# 3. FastEmbed Embedding Model Client
+# 3. FastEmbed Embedding Model Clients (Dense & Sparse)
 # ==========================================
-def get_embedding_model(
-    model_name: str = "BAAI/bge-small-en-v1.5",
+def get_dense_embedding_model(
+    model_name: str | None = None,
 ) -> Any:
-    """Return or lazily initialize the FastEmbed TextEmbedding model singleton."""
-    global _fastembed_model
-    if _fastembed_model is None:
+    """Return or lazily initialize the FastEmbed Dense TextEmbedding model cached by name."""
+    global _dense_embedding_models
+    target_model = model_name or get_settings().EMBEDDING_DENSE_MODEL
+    if target_model not in _dense_embedding_models:
         from fastembed import TextEmbedding
 
-        logger.info(f"Initializing FastEmbed model: {model_name}")
-        _fastembed_model = TextEmbedding(model_name=model_name)
-    return _fastembed_model
+        logger.info(f"Initializing FastEmbed Dense model: {target_model}")
+        _dense_embedding_models[target_model] = TextEmbedding(model_name=target_model)
+    return _dense_embedding_models[target_model]
+
+
+def get_sparse_embedding_model(
+    model_name: str | None = None,
+) -> Any:
+    """Return or lazily initialize the FastEmbed SparseTextEmbedding model cached by name."""
+    global _sparse_embedding_models
+    target_model = model_name or get_settings().EMBEDDING_SPARSE_MODEL
+    if target_model not in _sparse_embedding_models:
+        from fastembed import SparseTextEmbedding
+
+        logger.info(f"Initializing FastEmbed Sparse model: {target_model}")
+        _sparse_embedding_models[target_model] = SparseTextEmbedding(model_name=target_model)
+    return _sparse_embedding_models[target_model]
+
+
+
+def get_embedding_model(
+    model_name: str | None = None,
+) -> Any:
+    """Backwards-compatible alias for the default dense embedding model."""
+    return get_dense_embedding_model(model_name=model_name)
+
 
 
 # ==========================================
