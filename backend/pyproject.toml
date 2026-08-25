@@ -27,3 +27,7 @@ asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["app/tests"]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
