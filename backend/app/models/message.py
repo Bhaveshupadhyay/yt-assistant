@@ -12,6 +12,7 @@ from sqlalchemy import (
     Index,
     JSON,
     Text,
+    UniqueConstraint,
     Uuid,
     func,
 )
@@ -33,6 +34,7 @@ class Message(Base):
             f"role IN ({', '.join(repr(r.value) for r in MessageRole)})",
             name="chk_message_role",
         ),
+        UniqueConstraint("id", "session_id", name="uq_messages_id_session_id"),
         Index("idx_messages_session_id", "session_id"),
     )
 
@@ -81,6 +83,8 @@ class Message(Base):
         "Artifact",
         back_populates="message",
         lazy="selectin",
+        foreign_keys="[Artifact.message_id, Artifact.session_id]",
+        overlaps="session,artifacts",
     )
 
     def __repr__(self) -> str:

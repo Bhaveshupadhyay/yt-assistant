@@ -91,18 +91,30 @@ class Settings(BaseSettings):
     @classmethod
     def assemble_cors_origins(cls, v: Any) -> list[str]:
         """Support JSON arrays, comma-separated strings, or list of strings."""
+        if v is None:
+            raise ValueError("CORS_ORIGINS cannot be None")
         if isinstance(v, str):
-            if v.startswith("[") and v.endswith("]"):
+            stripped = v.strip()
+            if not stripped:
+                raise ValueError("CORS_ORIGINS cannot be empty")
+            if stripped.startswith("[") or stripped.endswith("]"):
+                if not (stripped.startswith("[") and stripped.endswith("]")):
+                    raise ValueError(f"Malformed JSON array for CORS_ORIGINS: {stripped}")
                 import json
 
                 try:
-                    return json.loads(v)
-                except Exception:
-                    pass
-            return [i.strip() for i in v.split(",") if i.strip()]
+                    parsed = json.loads(stripped)
+                    if not isinstance(parsed, list) or not all(isinstance(x, str) for x in parsed):
+                        raise ValueError("CORS_ORIGINS JSON array must contain strings")
+                    return parsed
+                except json.JSONDecodeError as exc:
+                    raise ValueError(f"Invalid JSON for CORS_ORIGINS: {exc}") from exc
+            return [i.strip() for i in stripped.split(",") if i.strip()]
         elif isinstance(v, (list, tuple)):
+            if not all(isinstance(x, str) for x in v):
+                raise ValueError("All CORS_ORIGINS elements must be strings")
             return list(v)
-        return ["*"]
+        raise ValueError(f"Unsupported CORS_ORIGINS type: {type(v).__name__}")
 
     @property
     def is_sqlite(self) -> bool:

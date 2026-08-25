@@ -1,5 +1,7 @@
 """Tests for configuration and environment settings with Enums."""
 
+import pytest
+from pydantic import ValidationError
 from app.core.config import Settings, get_settings
 from app.core.enums import Environment, LogFormat, LogLevel, ModelName
 
@@ -32,6 +34,18 @@ def test_cors_origins_parsing():
     # JSON array string format
     s3 = Settings(CORS_ORIGINS='["http://localhost:3000", "http://example.com"]')
     assert s3.CORS_ORIGINS == ["http://localhost:3000", "http://example.com"]
+
+
+def test_cors_origins_invalid_rejections():
+    """Verify CORS origins validator strictly rejects invalid inputs."""
+    with pytest.raises(ValidationError):
+        Settings(CORS_ORIGINS=None)
+
+    with pytest.raises(ValidationError):
+        Settings(CORS_ORIGINS="[invalid-json")
+
+    with pytest.raises(ValidationError):
+        Settings(CORS_ORIGINS="")
 
 
 def test_database_properties():

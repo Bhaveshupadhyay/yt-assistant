@@ -132,10 +132,15 @@ async def app_exception_handler(request: Request, exc: AppException) -> JSONResp
 
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
-    """Handles FastAPI/Pydantic request validation errors."""
+    """Handles FastAPI/Pydantic request validation errors, sanitizing input to prevent sensitive data leakage."""
+    sanitized_errors = []
+    for err in exc.errors():
+        err_copy = {k: v for k, v in err.items() if k != "input"}
+        sanitized_errors.append(err_copy)
+
     logger.warning(
         "Request validation failed",
-        extra={"extra_data": {"path": request.url.path, "errors": exc.errors()}},
+        extra={"extra_data": {"path": request.url.path, "errors": sanitized_errors}},
     )
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -143,7 +148,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             "error": {
                 "type": "ValidationError",
                 "message": "Invalid request payload or query parameters.",
-                "details": exc.errors(),
+                "details": sanitized_errors,
             }
         },
     )

@@ -1,9 +1,19 @@
-"""Artifact database model with typed Enums."""
+"""Artifact database model with typed Enums and composite referential integrity."""
 
 import uuid
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING
-from sqlalchemy import CheckConstraint, DateTime, Enum as SAEnum, ForeignKey, Index, Text, Uuid, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    Enum as SAEnum,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Text,
+    Uuid,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 from app.core.enums import ArtifactType
@@ -22,6 +32,12 @@ class Artifact(Base):
             f"artifact_type IN ({', '.join(repr(t.value) for t in ArtifactType)})",
             name="chk_artifact_type",
         ),
+        ForeignKeyConstraint(
+            ["message_id", "session_id"],
+            ["messages.id", "messages.session_id"],
+            name="fk_artifacts_message_session",
+            ondelete="SET NULL",
+        ),
         Index("idx_artifacts_session_id", "session_id"),
         Index("idx_artifacts_message_id", "message_id"),
     )
@@ -39,7 +55,6 @@ class Artifact(Base):
     )
     message_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid(as_uuid=True),
-        ForeignKey("messages.id", ondelete="SET NULL"),
         nullable=True,
     )
     artifact_type: Mapped[ArtifactType] = mapped_column(
@@ -64,10 +79,13 @@ class Artifact(Base):
     session: Mapped["ChatSession"] = relationship(
         "ChatSession",
         back_populates="artifacts",
+        foreign_keys=[session_id],
     )
     message: Mapped["Message | None"] = relationship(
         "Message",
         back_populates="artifacts",
+        foreign_keys=[message_id, session_id],
+        overlaps="session,artifacts",
     )
 
     def __repr__(self) -> str:

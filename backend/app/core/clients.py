@@ -1,7 +1,7 @@
 """Centralized external service clients and connection pool management.
 
 Follows the singleton connection pooling pattern for:
-- PostgreSQL / SQLite (SQLAlchemy 2.0 Async Engine & Sessionmaker)
+- PostgreSQL / SQLite (Reuses SQLAlchemy 2.0 Async Engine & Sessionmaker from database module)
 - Qdrant Vector Database (AsyncQdrantClient)
 - FastEmbed (Text Embedding Model Engine)
 - Ollama Local Daemon (HTTPX Async Client with pooling and keep-alive)
@@ -16,16 +16,18 @@ from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
     async_sessionmaker,
-    create_async_engine,
 )
 from app.core.config import Settings, get_settings
-from app.core.database import get_engine_args
+from app.core.database import (
+    close_db,
+    create_engine_and_session_factory,
+    engine as _db_engine,
+    async_session_factory as _db_session_factory,
+)
 
 logger = logging.getLogger(__name__)
 
 # Global client / pool singletons
-_async_engine: AsyncEngine | None = None
-_async_session_factory: async_sessionmaker[AsyncSession] | None = None
 _qdrant_client: AsyncQdrantClient | None = None
 _ollama_client: httpx.AsyncClient | None = None
 _anthropic_client: httpx.AsyncClient | None = None
@@ -37,42 +39,26 @@ _fastembed_model: Any | None = None
 # 1. Database (PostgreSQL / SQLite) Engine & Factory
 # ==========================================
 def get_async_engine(settings: Settings | None = None) -> AsyncEngine:
-    """Return or lazily create the SQLAlchemy 2.0 AsyncEngine singleton."""
-    global _async_engine
-    if _async_engine is None:
-        cfg = settings or get_settings()
-        engine_args = get_engine_args(cfg)
-        logger.info(f"Initializing AsyncEngine for database dialect: {'SQLite' if cfg.is_sqlite else 'PostgreSQL'}")
-        _async_engine = create_async_engine(cfg.DATABASE_URL, **engine_args)
-    return _async_engine
+    """Return the shared SQLAlchemy 2.0 AsyncEngine singleton from the database module."""
+    if settings is not None:
+        custom_engine, _ = create_engine_and_session_factory(settings)
+        return custom_engine
+    return _db_engine
 
 
 def get_session_factory(settings: Settings | None = None) -> async_sessionmaker[AsyncSession]:
-    """Return or lazily create the async sessionmaker factory."""
-    global _async_session_factory
-    if _async_session_factory is None:
-        engine_instance = get_async_engine(settings)
-        _async_session_factory = async_sessionmaker(
-            bind=engine_instance,
-            class_=AsyncSession,
-            expire_on_commit=False,
-            autoflush=False,
-            autocommit=False,
-        )
-    return _async_session_factory
+    """Return the shared async sessionmaker factory from the database module."""
+    if settings is not None:
+        _, custom_factory = create_engine_and_session_factory(settings)
+        return custom_factory
+    return _db_session_factory
 
 
 async def close_database_engine() -> None:
     """Dispose of the database engine connection pool."""
-    global _async_engine, _async_session_factory
-    if _async_engine is not None:
-        logger.info("Closing database engine connection pool...")
-        try:
-            await _async_engine.dispose()
-        finally:
-            _async_engine = None
-            _async_session_factory = None
-        logger.info("Database engine closed.")
+    logger.info("Closing database engine connection pool...")
+    await close_db(_db_engine)
+    logger.info("Database engine closed.")
 
 
 # ==========================================

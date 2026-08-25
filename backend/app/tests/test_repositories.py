@@ -4,6 +4,7 @@ import uuid
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.enums import ArtifactType, MessageRole, ModelName
+from app.models.message import Message
 from app.repositories.artifact_repository import ArtifactRepository
 from app.repositories.message_repository import MessageRepository
 from app.repositories.session_repository import SessionRepository
@@ -102,23 +103,37 @@ async def test_message_repository_crud(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_artifact_repository_crud(db_session: AsyncSession):
-    """Test CRUD operations on ArtifactRepository."""
+    """Test CRUD operations on ArtifactRepository and message.has_artifact synchronization."""
     session_repo = SessionRepository(session=db_session)
+    msg_repo = MessageRepository(session=db_session)
     artifact_repo = ArtifactRepository(session=db_session)
 
     session = await session_repo.create(title="Ship 30 Essay Workshop")
     await db_session.commit()
 
-    # 1. Create Artifact
+    message = await msg_repo.create(
+        session_id=session.id,
+        role=MessageRole.ASSISTANT,
+        content="Here is the essay draft.",
+    )
+    await db_session.commit()
+    assert message.has_artifact is False
+
+    # 1. Create Artifact linked to message
     artifact = await artifact_repo.create(
         session_id=session.id,
         artifact_type=ArtifactType.MARKDOWN,
         title="Why PLG Fails Without Retention - Ship 30 Essay",
         content="# Why PLG Fails Without Retention\n\nMost founders believe...",
+        message_id=message.id,
     )
     await db_session.commit()
     assert artifact.id is not None
     assert artifact.artifact_type == ArtifactType.MARKDOWN
+
+    # Verify message has_artifact is True
+    await db_session.refresh(message)
+    assert message.has_artifact is True
 
     # 2. Fetch by ID
     fetched = await artifact_repo.get_by_id(artifact.id)
@@ -130,8 +145,11 @@ async def test_artifact_repository_crud(db_session: AsyncSession):
     assert len(artifacts) == 1
     assert artifacts[0].id == artifact.id
 
-    # 4. Delete
+    # 4. Delete artifact and verify has_artifact is reset
     deleted = await artifact_repo.delete(artifact.id)
     await db_session.commit()
     assert deleted is True
     assert await artifact_repo.get_by_id(artifact.id) is None
+
+    await db_session.refresh(message)
+    assert message.has_artifact is False

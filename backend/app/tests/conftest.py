@@ -6,10 +6,13 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.pool import StaticPool
-from app.core.config import Settings
+import logging
+from app.core.config import Settings, get_settings
 from app.core.database import Base
 from app.core.dependencies import get_db
 from main import create_application
+
+logging.getLogger("aiosqlite").setLevel(logging.WARNING)
 
 
 @pytest.fixture
@@ -56,21 +59,23 @@ async def db_session(test_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, N
 
 
 @pytest_asyncio.fixture
-async def app_instance(test_engine: AsyncEngine, db_session: AsyncSession):
-    """Fixture providing a configured FastAPI app instance with overridden DB dependency."""
+async def app_instance(test_settings: Settings, test_engine: AsyncEngine, db_session: AsyncSession):
+    """Fixture providing a configured FastAPI app instance with overridden dependencies."""
     app = create_application()
 
     async def _override_get_db() -> AsyncGenerator[AsyncSession, None]:
         yield db_session
 
     app.dependency_overrides[get_db] = _override_get_db
+    app.dependency_overrides[get_settings] = lambda: test_settings
     yield app
     app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture
 async def async_client(app_instance) -> AsyncGenerator[AsyncClient, None]:
-    """Fixture providing an AsyncClient for testing HTTP endpoints."""
+    """Fixture providing an AsyncClient running inside the application lifespan context."""
     transport = ASGITransport(app=app_instance)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        yield client
+    async with app_instance.router.lifespan_context(app_instance):
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            yield client

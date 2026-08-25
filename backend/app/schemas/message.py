@@ -25,7 +25,7 @@ class MessageBase(BaseModel):
 
     role: MessageRole = Field(..., description="Message author role: user, assistant, or system")
     content: str = Field(..., description="Text content of the message")
-    citations: list[CitationSchema | dict[str, Any]] = Field(
+    citations: list[CitationSchema] = Field(
         default_factory=list,
         description="Structured citations referencing Lenny transcripts",
     )

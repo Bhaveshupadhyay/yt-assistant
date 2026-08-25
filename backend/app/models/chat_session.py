@@ -61,6 +61,7 @@ class ChatSession(Base):
         back_populates="session",
         cascade="all, delete-orphan",
         order_by="Artifact.created_at",
+        foreign_keys="[Artifact.session_id]",
         lazy="selectin",
     )
 

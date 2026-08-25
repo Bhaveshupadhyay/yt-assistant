@@ -44,7 +44,9 @@ async def check_health(
     except Exception as exc:
         logger.debug(f"Ollama health check unreachable: {exc}")
 
-    overall_status = HealthStatus.OK if db_healthy else HealthStatus.DEGRADED
+    overall_status = (
+        HealthStatus.OK if (db_healthy and ollama_healthy) else HealthStatus.DEGRADED
+    )
 
     return HealthResponse(
         status=overall_status,

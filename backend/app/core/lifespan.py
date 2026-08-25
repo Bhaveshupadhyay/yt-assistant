@@ -13,17 +13,18 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Application lifespan context manager: startup before yield, shutdown after yield."""
+    """Application lifespan context manager: startup before yield, guaranteed shutdown cleanup via try...finally."""
     settings = get_settings()
 
     # 1. Startup: Logging, Database & Infrastructure initialization
     setup_logging(settings)
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION} (env: {settings.ENVIRONMENT})...")
-    await init_all_clients(settings)
 
-    yield
-
-    # 2. Shutdown: Clean up client pools and connections
-    logger.info(f"Shutting down {settings.APP_NAME}...")
-    await close_all_clients()
-    logger.info("All infrastructure client connections closed cleanly.")
+    try:
+        await init_all_clients(settings)
+        yield
+    finally:
+        # 2. Shutdown: Guaranteed clean up of client pools and connections
+        logger.info(f"Shutting down {settings.APP_NAME}...")
+        await close_all_clients()
+        logger.info("All infrastructure client connections closed cleanly.")
