@@ -69,8 +69,15 @@ class ModelRegistry:
             description="Ultra-fast, cost-efficient model for quick responses (Cloud).",
         ),
         ModelSpec(
+            id=ModelName.LLAMA_3_2_1B.value,
+            name="Llama 3.2 (1B Ultra-Fast)",
+            provider=ModelProvider.OLLAMA,
+            is_cloud=False,
+            description="Ultra-lightweight on-device model optimized for low memory footprint and high speed locally.",
+        ),
+        ModelSpec(
             id=ModelName.LLAMA_3_2.value,
-            name="Llama 3.2 (3B/8B)",
+            name="Llama 3.2 (3B)",
             provider=ModelProvider.OLLAMA,
             is_cloud=False,
             description="Optimized on-device edge model running locally via Ollama with zero data egress.",

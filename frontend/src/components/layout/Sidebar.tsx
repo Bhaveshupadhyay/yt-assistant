@@ -143,15 +143,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <button
             type="button"
-            onClick={() => onSelectModel('llama3.2')}
+            onClick={() => onSelectModel('llama3.2:1b')}
             className={`cursor-pointer flex items-center gap-1.5 p-1.5 rounded-lg border text-[11px] font-medium transition-all ${
-              activeModel === 'llama3.2'
+              activeModel === 'llama3.2:1b' || activeModel === 'llama3.2'
                 ? 'bg-emerald-500/10 border-emerald-500 text-emerald-600 dark:text-emerald-400 font-semibold'
                 : 'border-border text-muted hover:text-foreground'
             }`}
           >
             <Cpu className="w-3 h-3 flex-shrink-0" />
-            <span className="truncate">Ollama Local</span>
+            <span className="truncate">Ollama 1B</span>
           </button>
         </div>
 

@@ -94,7 +94,7 @@ class Settings(BaseSettings):
         description="Ollama local daemon URL",
     )
     OLLAMA_MODEL: str = Field(
-        default=ModelName.LLAMA_3_2.value,
+        default=ModelName.LLAMA_3_2_1B.value,
         description="Default local Ollama model identifier",
     )
 
