@@ -3,6 +3,7 @@
 import asyncio
 from collections.abc import AsyncGenerator
 import logging
+import re
 from typing import Any
 from app.core.config import Settings, get_settings
 from app.schemas.message import CitationSchema
@@ -15,6 +16,36 @@ logger = logging.getLogger(__name__)
 NO_DATA_FALLBACK = (
     "I could not find specific insights or discussions on this topic within the available Lenny's Podcast transcripts."
 )
+
+CONVERSATIONAL_PHRASES: set[str] = {
+    "got it", "gotcha", "understood", "noted", "makes sense", "sounds good",
+    "all good", "cool", "awesome", "great", "perfect", "nice", "ok", "okay",
+    "k", "sure", "yep", "yeah", "yes", "no", "nope", "nah", "right", "fine",
+    "thanks", "thank you", "thx", "ty", "thank you so much", "thanks a lot",
+    "appreciate it", "much appreciated", "many thanks",
+    "hi", "hello", "hey", "greetings", "good morning", "good afternoon", "good evening", "howdy",
+    "bye", "goodbye", "see you", "see ya", "talk to you later"
+}
+
+CONVERSATIONAL_PATTERNS = [
+    re.compile(r"^(?:got\s+it|gotcha|understood|noted|makes\s+sense|sounds\s+good|all\s+good|cool|awesome|great|perfect|nice|ok(?:ay)?|k|sure|yep|yeah|yes|no|nope|nah)[.!]?$", re.IGNORECASE),
+    re.compile(r"^(?:thanks|thank\s+you(?:\s+so\s+much|\s+very\s+much)?|thx|ty|many\s+thanks|appreciate\s+it|much\s+appreciated)[.!]?$", re.IGNORECASE),
+    re.compile(r"^(?:hi|hello|hey|greetings|good\s+(?:morning|afternoon|evening|day))[.!]?$", re.IGNORECASE),
+    re.compile(r"^(?:bye|goodbye|see\s+ya|see\s+you|talk\s+to\s+you\s+later)[.!]?$", re.IGNORECASE),
+]
+
+
+def is_conversational_turn(message: str) -> bool:
+    """Check if message is a conversational acknowledgment, greeting, or pleasantry that doesn't require RAG."""
+    clean = re.sub(r"[^\w\s]", "", message.strip().lower())
+    if not clean:
+        return True
+    if clean in CONVERSATIONAL_PHRASES:
+        return True
+    for pat in CONVERSATIONAL_PATTERNS:
+        if pat.match(message.strip()):
+            return True
+    return False
 
 
 class RAGService:
@@ -214,6 +245,29 @@ class RAGService:
                     messages.append({"role": role, "content": content})
 
         messages.append({"role": "user", "content": context_user_message})
+        return system_prompt, messages
+
+    def build_conversational_messages(
+        self,
+        query: str,
+        conversation_history: list[dict[str, str]] | None = None,
+    ) -> tuple[str, list[dict[str, str]]]:
+        """Construct system prompt and messages for conversational turns (greetings/acknowledgments)."""
+        system_prompt = (
+            "You are The Lenny Growth Assistant, an executive product and growth advisor grounded in Lenny's Podcast.\n"
+            "The user has sent a short conversational acknowledgment, greeting, or pleasantry (e.g. 'got it', 'thanks', 'hello').\n"
+            "Respond warmly, concisely (1-2 sentences), and ask how you can assist them further with product management, "
+            "growth frameworks, pricing, retention loops, or Lenny's Podcast insights."
+        )
+        messages: list[dict[str, str]] = []
+        if conversation_history:
+            for msg in conversation_history:
+                role = msg.get("role", "user")
+                content = msg.get("content", "")
+                if role in ("user", "assistant"):
+                    messages.append({"role": role, "content": content})
+
+        messages.append({"role": "user", "content": query})
         return system_prompt, messages
 
     async def query(

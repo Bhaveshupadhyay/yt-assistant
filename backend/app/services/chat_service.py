@@ -3,12 +3,13 @@
 from collections.abc import AsyncGenerator
 import json
 import logging
+import re
 import time
 from typing import Any
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
-from app.core.enums import MessageRole, ModelProvider
+from app.core.enums import ArtifactType, MessageRole, ModelProvider
 from app.core.exceptions import (
     AppException,
     OllamaUnavailableException,
@@ -24,9 +25,13 @@ from app.schemas.chat import (
     ChatStatusPayload,
     ChatTokenPayload,
 )
-from app.services.artifact_service import ArtifactService, ArtifactStreamParser
+from app.services.artifact_service import (
+    ArtifactService,
+    ArtifactStreamParser,
+    ExtractedArtifact,
+)
 from app.services.llm.factory import get_llm_client, resolve_provider_for_model
-from app.services.rag_service import RAGService
+from app.services.rag_service import RAGService, is_conversational_turn
 from app.services.ship30_service import Ship30Service
 
 logger = logging.getLogger(__name__)
@@ -124,31 +129,66 @@ class ChatService:
             if payload.model and payload.model != session.model_used:
                 await self.session_repo.update(session_id=payload.session_id, model_used=payload.model)
 
-            # ─── Stage 1: Retrieval Status ────────────────────────────────────
-            yield format_sse(
-                "status",
-                ChatStatusPayload(stage="retrieval", message="Searching Lenny transcripts..."),
-            )
-
-            # Perform hybrid dense + sparse retrieval
-            chunks = await self.rag_service.retrieve(query=payload.message, top_k=payload.top_k)
-            citations = self.rag_service.extract_citations(chunks)
-            citations_data = [c.model_dump() for c in citations]
-            is_fallback = self.rag_service.is_fallback_needed(chunks)
-
-            # ─── Stage 2: Prompt Assembly & Generation Status ─────────────────
-            yield format_sse(
-                "status",
-                ChatStatusPayload(stage="generation", message="Synthesizing answer from transcripts..."),
-            )
-
-            # Check if specialized skill requested
+            # Check if specialized skill or conversational intent requested
             is_ship30 = payload.skill == "ship30" or (
                 not payload.skill and "ship 30" in payload.message.lower()
             )
+            is_conversational = not is_ship30 and is_conversational_turn(payload.message)
 
-            # Zero-hallucination fallback check
-            if is_fallback and not is_ship30:
+            if is_conversational:
+                # Bypass DB vector search for pure conversational pleasantries / acknowledgments
+                chunks = []
+                citations = []
+                citations_data = []
+                is_fallback = False
+                yield format_sse(
+                    "status",
+                    ChatStatusPayload(stage="generation", message="Responding..."),
+                )
+            else:
+                # ─── Stage 1: Retrieval Status ────────────────────────────────────
+                yield format_sse(
+                    "status",
+                    ChatStatusPayload(stage="retrieval", message="Searching Lenny transcripts..."),
+                )
+
+                # Perform hybrid dense + sparse retrieval
+                chunks = await self.rag_service.retrieve(query=payload.message, top_k=payload.top_k)
+                citations = self.rag_service.extract_citations(chunks)
+                citations_data = [c.model_dump() for c in citations]
+                is_fallback = self.rag_service.is_fallback_needed(chunks)
+
+                # ─── Stage 2: Prompt Assembly & Generation Status ─────────────────
+                yield format_sse(
+                    "status",
+                    ChatStatusPayload(stage="generation", message="Synthesizing answer from transcripts..."),
+                )
+
+            # Fetch recent conversation context chronologically (excluding current prompt)
+            prior_messages = await self.message_repo.get_recent_history(
+                session_id=payload.session_id,
+                limit=20,
+                exclude_id=user_msg.id,
+            )
+            history_list = [
+                {"role": m.role.value if hasattr(m.role, "value") else str(m.role), "content": m.content}
+                for m in prior_messages
+            ]
+
+            if is_conversational:
+                system_prompt, messages = self.rag_service.build_conversational_messages(
+                    query=payload.message,
+                    conversation_history=history_list,
+                )
+                async for token in llm_client.astream(messages=messages, system_prompt=system_prompt):
+                    token_count += 1
+                    full_generated_tokens.append(token)
+                    yield format_sse("token", ChatTokenPayload(delta=token))
+
+                clean_text = "".join(full_generated_tokens)
+                extracted_artifacts = []
+
+            elif is_fallback and not is_ship30:
                 fallback_msg = self.rag_service.get_zero_hallucination_fallback()
                 for word in fallback_msg.split(" "):
                     delta = word + " "
@@ -158,19 +198,9 @@ class ChatService:
                 clean_text = fallback_msg.strip()
                 extracted_artifacts = []
             else:
-                # Fetch recent conversation context chronologically (excluding current prompt)
-                prior_messages = await self.message_repo.get_recent_history(
-                    session_id=payload.session_id,
-                    limit=20,
-                    exclude_id=user_msg.id,
-                )
-                history_list = [
-                    {"role": m.role.value if hasattr(m.role, "value") else str(m.role), "content": m.content}
-                    for m in prior_messages
-                ]
-
                 if is_ship30:
                     system_prompt = self.ship30_service.build_ship30_system_prompt()
+                    system_prompt += self.artifact_service.get_artifact_system_instructions()
                     user_prompt = self.ship30_service.build_ship30_user_prompt(
                         topic=payload.message, context_chunks=chunks
                     )
@@ -195,8 +225,24 @@ class ChatService:
                 # Finalize parser or fallback to full text parser
                 full_text = "".join(full_generated_tokens)
                 parse_result = self.artifact_service.parse_artifacts(full_text)
-                clean_text = parse_result.clean_text if parse_result.has_artifact else full_text
-                extracted_artifacts = parse_result.artifacts or stream_parser.finalize()
+
+                if is_ship30 and not parse_result.has_artifact and len(full_text.strip()) > 50:
+                    first_header = re.search(r"^#+\s+(.+)$", full_text, re.MULTILINE)
+                    title = first_header.group(1).strip() if first_header else f"Ship 30: {payload.message[:35]}"
+                    extracted_artifacts = [
+                        ExtractedArtifact(
+                            artifact_type=ArtifactType.MARKDOWN,
+                            title=title,
+                            content=full_text.strip(),
+                        )
+                    ]
+                    clean_text = (
+                        f"I have crafted a complete **Ship 30 for 30** essay on **{payload.message}** grounded in Lenny's Podcast transcripts.\n\n"
+                        "You can review, copy, and download the full essay in the side-by-side **Artifact Viewer**."
+                    )
+                else:
+                    clean_text = parse_result.clean_text if parse_result.has_artifact else full_text
+                    extracted_artifacts = parse_result.artifacts or stream_parser.finalize()
 
             # ─── Stage 3: Citations Payload Event ─────────────────────────────
             if citations_data and not is_fallback:
@@ -270,6 +316,7 @@ class ChatService:
                     model_used=target_model,
                     citations_count=len(citations_data) if not is_fallback else 0,
                     has_artifact=len(extracted_artifacts) > 0,
+                    content=clean_text.strip(),
                     finish_reason="stop",
                 ),
             )

@@ -45,10 +45,13 @@ export interface ChatTokenEvent {
 }
 
 export interface ChatDoneEvent {
-  full_text: string;
-  citations: Citation[];
-  has_artifact: boolean;
+  session_id: string;
+  message_id: string;
   model_used: string;
+  citations_count?: number;
+  has_artifact: boolean;
+  content?: string | null;
+  finish_reason?: string;
 }
 
 export interface ChatErrorEvent {

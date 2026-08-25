@@ -13,10 +13,29 @@ export function useModels() {
       setIsLoading(true);
       setError(null);
       const catalog: ModelsCatalogResponse = await fetchModels();
-      setModels(catalog.models);
+      const rawList = catalog.available_models || [];
+      const formattedList: ModelInfo[] = rawList.map(m => ({
+        id: m.id,
+        name: m.name,
+        provider: m.provider,
+        is_cloud: m.is_cloud,
+        is_local: !m.is_cloud || m.provider === 'ollama',
+        description: m.description,
+        is_available: m.is_available,
+      }));
+
+      setModels(formattedList);
       
-      if (!catalog.models.some(m => m.id === activeModel)) {
-        setActiveModel(catalog.default_cloud_model || catalog.models[0]?.id || 'claude-3-5-sonnet');
+      if (catalog.active_model && formattedList.some(
+        m => m.id === catalog.active_model && m.is_available,
+      )) {
+        setActiveModel(catalog.active_model);
+      } else if (
+        formattedList.length > 0 &&
+        !formattedList.some(m => m.id === activeModel && m.is_available)
+      ) {
+        const firstAvailable = formattedList.find(m => m.is_available) || formattedList[0];
+        setActiveModel(firstAvailable.id);
       }
     } catch (err: any) {
       setError(err.message || 'Failed to load model catalog');

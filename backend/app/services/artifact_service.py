@@ -9,7 +9,7 @@ from app.core.enums import ArtifactType
 logger = logging.getLogger(__name__)
 
 ARTIFACT_TAG_REGEX = re.compile(
-    r'<artifact\s+type=[\'"](?P<type>html|markdown|svg)[\'"]\s+title=[\'"](?P<title>[^\'"]+)[\'"]\s*>(?P<content>.*?)</artifact>',
+    r'<(?:artifact|antArtifact)\b(?P<attrs>[^>]*)>(?P<content>.*?)</(?:artifact|antArtifact)>',
     re.DOTALL | re.IGNORECASE,
 )
 
@@ -91,17 +91,28 @@ class ArtifactService:
         artifacts: list[ExtractedArtifact] = []
         clean_text = text
 
-        # 1. Primary extraction: Standard <artifact type="..." title="...">...</artifact> tags
+        # 1. Primary extraction: Standard <artifact ...>...</artifact> tags
         for match in ARTIFACT_TAG_REGEX.finditer(text):
-            raw_type = match.group("type").lower()
-            title = match.group("title").strip()
+            attrs = match.group("attrs")
             content = match.group("content").strip()
             raw_match = match.group(0)
 
-            try:
-                art_type = ArtifactType(raw_type)
-            except ValueError:
-                art_type = ArtifactType.HTML if "html" in raw_type else ArtifactType.MARKDOWN
+            type_match = re.search(r'type=[\'"]([^\'"]+)[\'"]', attrs, re.I)
+            title_match = re.search(r'title=[\'"]([^\'"]+)[\'"]', attrs, re.I)
+
+            raw_type = type_match.group(1).lower() if type_match else "markdown"
+            if "html" in raw_type:
+                art_type = ArtifactType.HTML
+            elif "svg" in raw_type:
+                art_type = ArtifactType.SVG
+            else:
+                art_type = ArtifactType.MARKDOWN
+
+            if title_match:
+                title = title_match.group(1).strip()
+            else:
+                header_match = re.search(r"^#+\s+(.+)$", content, re.MULTILINE)
+                title = header_match.group(1).strip() if header_match else "Grounded Artifact"
 
             artifacts.append(
                 ExtractedArtifact(
@@ -188,54 +199,56 @@ class ArtifactStreamParser:
 
         # Check if we are currently outside an artifact
         if not self.in_artifact:
-            if "<artifact" in self.buffer:
-                # Potential start of artifact tag
-                start_idx = self.buffer.find("<artifact")
-                tag_end_idx = self.buffer.find(">", start_idx)
+            start_match = re.search(r'<(?:artifact|antArtifact)\b(?P<attrs>[^>]*)>', self.buffer, re.I)
+            if start_match:
+                start_idx = start_match.start()
+                end_idx = start_match.end()
+                text_before = self.buffer[:start_idx]
+                attrs = start_match.group("attrs")
+                self.buffer = self.buffer[end_idx:]
 
-                if tag_end_idx != -1:
-                    # Full start tag received
-                    tag_str = self.buffer[start_idx : tag_end_idx + 1]
-                    text_before = self.buffer[:start_idx]
-                    self.buffer = self.buffer[tag_end_idx + 1 :]
+                type_match = re.search(r'type=[\'"]([^\'"]+)[\'"]', attrs, re.I)
+                title_match = re.search(r'title=[\'"]([^\'"]+)[\'"]', attrs, re.I)
 
-                    # Extract type and title attributes
-                    type_match = re.search(r'type=[\'"]([^\'"]+)[\'"]', tag_str, re.I)
-                    title_match = re.search(r'title=[\'"]([^\'"]+)[\'"]', tag_str, re.I)
-
-                    raw_type = type_match.group(1).lower() if type_match else "html"
-                    try:
-                        self.current_type = ArtifactType(raw_type)
-                    except ValueError:
-                        self.current_type = ArtifactType.HTML
-
-                    self.current_title = title_match.group(1).strip() if title_match else "Interactive Tool"
-                    self.in_artifact = True
-                    self.artifact_content_buffer = ""
-
-                    return {
-                        "type": "text_delta",
-                        "content": text_before,
-                        "artifact_start": True,
-                        "artifact_type": self.current_type.value,
-                        "artifact_title": self.current_title,
-                    }
+                raw_type = type_match.group(1).lower() if type_match else "markdown"
+                if "html" in raw_type:
+                    self.current_type = ArtifactType.HTML
+                elif "svg" in raw_type:
+                    self.current_type = ArtifactType.SVG
                 else:
-                    # Incomplete tag, keep buffering without emitting yet
-                    return {"type": "none", "content": ""}
+                    self.current_type = ArtifactType.MARKDOWN
+
+                self.current_title = title_match.group(1).strip() if title_match else "Grounded Artifact"
+                self.in_artifact = True
+                self.artifact_content_buffer = ""
+
+                return {
+                    "type": "text_delta",
+                    "content": text_before,
+                    "artifact_start": True,
+                    "artifact_type": self.current_type.value,
+                    "artifact_title": self.current_title,
+                }
+            # Check if buffer ends with a potential opening tag prefix (e.g. "<", "<art", "<artifact type=...")
+            potential_open = re.search(r'<(?:artifact|antartifact)[^>]*$', self.buffer, re.I) or re.search(r'<[a-z]{0,11}$', self.buffer, re.I)
+            if potential_open:
+                prefix_start = potential_open.start()
+                to_emit = self.buffer[:prefix_start]
+                self.buffer = self.buffer[prefix_start:]
+                return {"type": "text_delta", "content": to_emit} if to_emit else {"type": "none", "content": ""}
             else:
-                # Regular text token, emit buffer
                 to_emit = self.buffer
                 self.buffer = ""
                 return {"type": "text_delta", "content": to_emit}
 
         else:
             # We are inside an artifact
-            if "</artifact>" in self.buffer:
-                end_idx = self.buffer.find("</artifact>")
+            close_match = re.search(r'</(?:artifact|antArtifact)>', self.buffer, re.I)
+            if close_match:
+                end_idx = close_match.start()
                 artifact_chunk = self.buffer[:end_idx]
                 self.artifact_content_buffer += artifact_chunk
-                self.buffer = self.buffer[end_idx + len("</artifact>") :]
+                self.buffer = self.buffer[close_match.end():]
 
                 artifact = ExtractedArtifact(
                     artifact_type=self.current_type or ArtifactType.HTML,
@@ -252,6 +265,15 @@ class ArtifactStreamParser:
                     "content": artifact_chunk,
                     "artifact": artifact,
                 }
+            
+            # Check if buffer ends with a potential closing tag prefix (e.g. "</", "</art", "</artifact")
+            potential_close = re.search(r'</(?:artifact|antartifact)?[^>]*$', self.buffer, re.I) or re.search(r'</[a-z]{0,11}$', self.buffer, re.I)
+            if potential_close:
+                prefix_start = potential_close.start()
+                delta = self.buffer[:prefix_start]
+                self.artifact_content_buffer += delta
+                self.buffer = self.buffer[prefix_start:]
+                return {"type": "artifact_delta", "content": delta} if delta else {"type": "none", "content": ""}
             else:
                 # Inside artifact content, buffer and emit artifact delta
                 delta = self.buffer

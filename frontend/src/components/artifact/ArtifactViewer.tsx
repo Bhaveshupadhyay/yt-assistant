@@ -27,6 +27,22 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
   const [copied, setCopied] = React.useState(false);
   const [isFullscreen, setIsFullscreen] = React.useState(false);
 
+  // Handle ESC key to exit fullscreen or close panel (hook declared before any early return)
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isFullscreen, onClose]);
+
   if (!isOpen || !artifact) return null;
 
   const handleCopy = async () => {
@@ -39,10 +55,12 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
 
   const artifactType = artifact.artifactType || artifact.artifact_type || 'html';
   const isMarkdown = artifactType === 'markdown';
+  const isSvg = artifactType === 'svg';
 
   const handleDownload = () => {
-    const ext = artifactType === 'html' ? 'html' : artifactType === 'svg' ? 'svg' : 'md';
-    const blob = new Blob([artifact.content], { type: 'text/plain;charset=utf-8' });
+    const ext = isMarkdown ? 'md' : isSvg ? 'svg' : 'html';
+    const mimeType = isMarkdown ? 'text/markdown' : isSvg ? 'image/svg+xml' : 'text/html';
+    const blob = new Blob([artifact.content], { type: `${mimeType};charset=utf-8` });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -54,7 +72,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
   return (
     <div
       className={`flex flex-col bg-surface border-l border-border transition-all duration-300 ${
-        isFullscreen ? 'fixed inset-0 z-50 border-l-0' : 'h-full w-full'
+        isFullscreen ? 'fixed inset-0 z-50 border-l-0 shadow-2xl' : 'h-full w-full'
       }`}
     >
       {/* Top Header */}
@@ -113,7 +131,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
             type="button"
             onClick={handleDownload}
             className="cursor-pointer p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-secondary transition-colors"
-            title="Download Artifact File"
+            title={`Download as .${isMarkdown ? 'md' : isSvg ? 'svg' : 'html'}`}
           >
             <Download className="w-4 h-4" />
           </button>
@@ -123,7 +141,7 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
             type="button"
             onClick={() => setIsFullscreen(!isFullscreen)}
             className="cursor-pointer p-1.5 rounded-lg text-muted hover:text-foreground hover:bg-surface-secondary transition-colors"
-            title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
+            title={isFullscreen ? "Exit Fullscreen (Esc)" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
           </button>
@@ -163,6 +181,29 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
                       </pre>
                     );
                   },
+                  table({ children, ...props }) {
+                    return (
+                      <div className="my-4 overflow-x-auto rounded-lg border border-border">
+                        <table className="w-full text-left text-xs border-collapse" {...props}>
+                          {children}
+                        </table>
+                      </div>
+                    );
+                  },
+                  th({ children, ...props }) {
+                    return (
+                      <th className="bg-surface-secondary px-3 py-2 font-semibold text-foreground border-b border-border" {...props}>
+                        {children}
+                      </th>
+                    );
+                  },
+                  td({ children, ...props }) {
+                    return (
+                      <td className="px-3 py-2 border-b border-border/50 text-muted-foreground" {...props}>
+                        {children}
+                      </td>
+                    );
+                  },
                 }}
               >
                 {artifact.content}
@@ -170,7 +211,11 @@ export const ArtifactViewer: React.FC<ArtifactViewerProps> = ({
             </div>
           ) : (
             <SandboxedIframe
-              content={artifact.content}
+              content={
+                isSvg
+                  ? `<!DOCTYPE html><html><head><meta charset="utf-8"/><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:${isDark ? '#020817' : '#ffffff'};overflow:auto;}svg{max-width:100%;height:auto;}</style></head><body>${artifact.content}</body></html>`
+                  : artifact.content
+              }
               title={artifact.title}
               isDark={isDark}
             />

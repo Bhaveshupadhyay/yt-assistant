@@ -179,3 +179,41 @@ async def test_rag_service_astream_query(sample_rag_chunks: list[dict[str, Any]]
     async for tok in rag_empty.astream_query("Quantum Physics", llm_client=mock_llm):
         empty_streamed.append(tok)
     assert "".join(empty_streamed) == NO_DATA_FALLBACK
+
+
+def test_is_conversational_turn_detection() -> None:
+    """Test is_conversational_turn correctly recognizes pleasantries and acknowledgments."""
+    from app.services.rag_service import is_conversational_turn
+
+    # True cases
+    assert is_conversational_turn("got it") is True
+    assert is_conversational_turn("got it!") is True
+    assert is_conversational_turn("Got it.") is True
+    assert is_conversational_turn("thanks") is True
+    assert is_conversational_turn("thank you so much") is True
+    assert is_conversational_turn("ok") is True
+    assert is_conversational_turn("cool") is True
+    assert is_conversational_turn("sounds good") is True
+    assert is_conversational_turn("hello") is True
+    assert is_conversational_turn("hi") is True
+    assert is_conversational_turn("great!") is True
+
+    # False cases (substantive queries)
+    assert is_conversational_turn("what does Elena Verna say about PLG?") is False
+    assert is_conversational_turn("Explain Brian Balfour's 4 growth loops") is False
+    assert is_conversational_turn("got it, but how do I price my SaaS product?") is False
+    assert is_conversational_turn("Write a Ship 30 essay on retention") is False
+
+
+def test_build_conversational_messages() -> None:
+    """Test build_conversational_messages creates appropriate system prompt and history."""
+    rag = RAGService(vector_store=MockVectorStore([]))
+    history = [{"role": "user", "content": "How do I do PLG?"}, {"role": "assistant", "content": "Elena Verna says..."}]
+    sys_prompt, messages = rag.build_conversational_messages(query="got it", conversation_history=history)
+
+    assert "Lenny Growth Assistant" in sys_prompt
+    assert len(messages) == 3
+    assert messages[0]["role"] == "user"
+    assert messages[1]["role"] == "assistant"
+    assert messages[2]["role"] == "user"
+    assert messages[2]["content"] == "got it"

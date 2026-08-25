@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any
 from qdrant_client import QdrantClient, models
 from app.core.clients import (
@@ -163,9 +164,22 @@ class HybridVectorStore:
                     )
                 )
 
-            self.client.upsert(collection_name=target_col, points=points)
+            # Robust upsert with retry for remote Qdrant Cloud uploads
+            max_retries = 3
+            for attempt in range(1, max_retries + 1):
+                try:
+                    self.client.upsert(collection_name=target_col, points=points)
+                    break
+                except Exception as exc:
+                    if attempt == max_retries:
+                        logger.error(f"Failed to upsert batch {i // batch_size + 1} after {max_retries} attempts: {exc}")
+                        raise
+                    logger.warning(f"Upsert attempt {attempt} failed ({exc}). Retrying in {attempt * 2}s...")
+                    time.sleep(attempt * 2)
+
             upserted_count += len(points)
-            logger.info(f"Upserted batch {i // batch_size + 1} ({upserted_count}/{total} chunks)...")
+            if (i // batch_size + 1) % 10 == 0 or upserted_count == total:
+                logger.info(f"Upserted batch {i // batch_size + 1} ({upserted_count}/{total} chunks)...")
 
         logger.info(f"Finished upserting {upserted_count} chunks to '{target_col}'.")
         return upserted_count

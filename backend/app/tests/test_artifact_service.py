@@ -131,19 +131,39 @@ def test_wrap_artifact_helper() -> None:
     assert "</artifact>" in wrapped
 
 
-def test_artifact_stream_parser_flow() -> None:
-    """Test ArtifactStreamParser incremental processing of streamed tokens."""
+def test_parse_artifacts_ant_artifact_and_reversed_attrs() -> None:
+    """Test extracting artifact with reversed attributes and antArtifact tags."""
+    service = ArtifactService()
+    raw_text = (
+        "An authoritative executive growth memo on evaluating career pivots.\n\n"
+        '<antArtifact identifier="ship-30-career" title="The Career Expiration Date" type="text/markdown">\n'
+        "# The Career Expiration Date\n\nMost operators leave too early or too late.\n"
+        "</antArtifact>\n\nLet me know if you want to dive deeper."
+    )
+
+    res = service.parse_artifacts(raw_text)
+    assert res.has_artifact is True
+    assert len(res.artifacts) == 1
+    art = res.artifacts[0]
+    assert art.artifact_type == ArtifactType.MARKDOWN
+    assert art.title == "The Career Expiration Date"
+    assert "# The Career Expiration Date" in art.content
+    assert "An authoritative executive growth memo" in res.clean_text
+    assert "<antArtifact" not in res.clean_text
+    assert "# The Career Expiration Date" not in res.clean_text
+
+
+def test_artifact_stream_parser_ant_artifact_flow() -> None:
+    """Test ArtifactStreamParser with antArtifact tag flow."""
     stream_parser = ArtifactStreamParser()
 
     token_sequence = [
-        "Here is the ",
-        "tool:\n\n",
-        '<artifact type="html" title="Pricing Slider">\n',
-        "<button>",
-        "Click Me",
-        "</button>\n",
-        "</artifact>",
-        "\n\nLet me know what you think!",
+        "Executive overview.\n\n",
+        '<antArtifact title="Ada Chen on Quitting" type="text/markdown">\n',
+        "# The Curiosity Loop\n",
+        "Framework details here.\n",
+        "</antArtifact>",
+        "\n\nClosing note.",
     ]
 
     events = []
@@ -154,12 +174,46 @@ def test_artifact_stream_parser_flow() -> None:
     completed_artifacts = stream_parser.finalize()
     assert len(completed_artifacts) == 1
     art = completed_artifacts[0]
-    assert art.title == "Pricing Slider"
-    assert art.artifact_type == ArtifactType.HTML
-    assert "<button>Click Me</button>" in art.content
+    assert art.title == "Ada Chen on Quitting"
+    assert art.artifact_type == ArtifactType.MARKDOWN
+    assert "# The Curiosity Loop" in art.content
 
-    # Check event types emitted
-    event_types = [e["type"] for e in events if e["type"] != "none"]
-    assert "text_delta" in event_types
-    assert "artifact_delta" in event_types
-    assert "artifact_completed" in event_types
+
+def test_artifact_stream_parser_split_tokens() -> None:
+    """Test ArtifactStreamParser when opening and closing tags are fragmented across tokens."""
+    stream_parser = ArtifactStreamParser()
+
+    token_sequence = [
+        "Executive ",
+        "summary:\n\n",
+        "<",
+        "arti",
+        'fact type="markdown" title="Split Tag Test">',
+        "\n# Content Line 1\n",
+        "Content Line 2\n",
+        "</",
+        "arti",
+        "fact>",
+        "\n\nFooter note.",
+    ]
+
+    events = []
+    for tok in token_sequence:
+        event = stream_parser.feed_token(tok)
+        events.append(event)
+
+    completed_artifacts = stream_parser.finalize()
+    assert len(completed_artifacts) == 1
+    art = completed_artifacts[0]
+    assert art.title == "Split Tag Test"
+    assert art.artifact_type == ArtifactType.MARKDOWN
+    assert "# Content Line 1" in art.content
+    assert "Content Line 2" in art.content
+
+    # Check that tag fragments were not emitted as text_delta
+    text_deltas = [e["content"] for e in events if e["type"] == "text_delta"]
+    full_text_delta = "".join(text_deltas)
+    assert "<arti" not in full_text_delta
+    assert "</arti" not in full_text_delta
+    assert "Executive summary:" in full_text_delta
+    assert "Footer note." in full_text_delta
