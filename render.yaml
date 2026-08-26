@@ -27,4 +27,6 @@ services:
       - key: OPENAI_API_KEY
         sync: false
       - key: CORS_ORIGINS
-        value: '["http://localhost:5173", "https://bhaveshupadhyay.github.io"]'
+        value: '["http://localhost:5173", "https://bhaveshupadhyay.github.io", "https://lennyai.clientmanger.tech"]'
+      - key: CORS_ORIGIN_REGEX
+        value: 'https?://.*(clientmanger\.tech|github\.io|vercel\.app|onrender\.com)'

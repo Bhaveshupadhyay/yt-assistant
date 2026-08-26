@@ -19,6 +19,8 @@ def test_default_settings():
     assert settings.OLLAMA_MODEL == ModelName.LLAMA_3_2_1B.value
     assert settings.QDRANT_URL == "http://localhost:6333"
     assert settings.QDRANT_COLLECTION_NAME == "lenny_transcripts"
+    assert "https://lennyai.clientmanger.tech" in settings.CORS_ORIGINS
+    assert settings.CORS_ORIGIN_REGEX is not None
 
 
 def test_cors_origins_parsing():
@@ -34,6 +36,12 @@ def test_cors_origins_parsing():
     # JSON array string format
     s3 = Settings(CORS_ORIGINS='["http://localhost:3000", "http://example.com"]')
     assert s3.CORS_ORIGINS == ["http://localhost:3000", "http://example.com"]
+
+
+def test_cors_origin_regex_configuration():
+    """Verify CORS origin regex custom configuration."""
+    s = Settings(CORS_ORIGIN_REGEX=r"https://custom-domain\.com")
+    assert s.CORS_ORIGIN_REGEX == r"https://custom-domain\.com"
 
 
 def test_cors_origins_invalid_rejections():

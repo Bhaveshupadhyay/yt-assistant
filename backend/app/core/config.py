@@ -114,8 +114,18 @@ class Settings(BaseSettings):
 
     # CORS Origins
     CORS_ORIGINS: list[str] = Field(
-        default=["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5173"],
+        default=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "https://bhaveshupadhyay.github.io",
+            "https://lennyai.clientmanger.tech",
+        ],
         description="Allowed CORS origins for the frontend client",
+    )
+    CORS_ORIGIN_REGEX: str | None = Field(
+        default=r"https?://.*(clientmanger\.tech|github\.io|vercel\.app|onrender\.com)",
+        description="Optional regex pattern for allowed CORS origins",
     )
 
     # Logging Configuration
