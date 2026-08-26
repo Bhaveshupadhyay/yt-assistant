@@ -53,5 +53,6 @@ uv run pytest
 | `ANTHROPIC_API_KEY` | None | Anthropic Claude API key |
 | `OPENAI_API_KEY` | None | OpenAI API key |
 | `GEMINI_API_KEY` | None | Google Gemini API key |
-| `CORS_ORIGINS` | `["http://localhost:3000","http://localhost:5173"]` | Allowed CORS origins |
+| `CORS_ORIGINS` | `["http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","https://bhaveshupadhyay.github.io","https://lennyai.clientmanger.tech"]` | Allowed CORS origins |
+| `CORS_ORIGIN_REGEX` | `"https?://.*(clientmanger\\.tech\|github\\.io\|vercel\\.app\|onrender\\.com)"` | Allowed CORS origin regex |
 | `LOG_LEVEL` | `INFO` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
