@@ -39,6 +39,9 @@ jobs:
         working-directory: backend
         run: uv run pytest -v -k "not test_ingest"
 
+      - name: Verify Docker Container Build
+        run: docker build -t lenny-growth-assistant-backend:ci ./backend
+
   deploy:
     name: Trigger Render Deployment
     needs: test

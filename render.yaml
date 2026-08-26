@@ -1,13 +1,12 @@
 services:
   - type: web
     name: lenny-growth-assistant-api
-    runtime: python
+    runtime: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
     region: oregon
     plan: free
     branch: main
-    rootDir: backend
-    buildCommand: "uv sync --frozen"
-    startCommand: "uv run uvicorn main:app --host 0.0.0.0 --port $PORT"
     healthCheckPath: /health
     autoDeploy: false
     envVars:
