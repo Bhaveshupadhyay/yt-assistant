@@ -1,6 +1,5 @@
 # The Lenny Growth Assistant
 
-> **Forward Deployed Engineer (FDE) Technical Assignment Submission**  
 > An enterprise conversational AI workbench grounded strictly in *Lenny's Podcast & Newsletter* transcripts, featuring verifiable guest attribution, multi-session persistence, flexible LLM toggling (Anthropic Claude, OpenAI, Google Gemini, and Local Ollama), Ship 30 for 30 atomic essay generation, and a sandboxed side-by-side artifact viewer.
 
 ---
