@@ -17,13 +17,17 @@ logging.getLogger("aiosqlite").setLevel(logging.WARNING)
 
 @pytest.fixture
 def test_settings() -> Settings:
-    """Fixture providing isolated test settings."""
+    """Fixture providing isolated test settings with mock credentials for CI."""
     return Settings(
         DATABASE_URL="sqlite+aiosqlite:///:memory:",
         DATABASE_ECHO=False,
         DEBUG=True,
         ENVIRONMENT="testing",
         LOG_FORMAT="console",
+        GEMINI_API_KEY="test-gemini-key",
+        ANTHROPIC_API_KEY="test-anthropic-key",
+        OPENAI_API_KEY="test-openai-key",
+        OLLAMA_BASE_URL="http://localhost:11434",
     )
 
 
