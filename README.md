@@ -222,7 +222,8 @@ Below are the variables supported in `.env` (mirrored in `.env.example`):
 | `ANTHROPIC_API_KEY` | `""` | Optional API key for Anthropic Claude models |
 | `OPENAI_API_KEY` | `""` | Optional API key for OpenAI GPT models |
 | `GEMINI_API_KEY` | `""` | Optional API key for Google Gemini models |
-| `CORS_ORIGINS` | `["http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173"]` | Allowed CORS origins for frontend client |
+| `CORS_ORIGINS` | `["http://localhost:3000","http://127.0.0.1:3000","http://localhost:5173","https://bhaveshupadhyay.github.io","https://lennyai.clientmanger.tech"]` | Allowed CORS origins for frontend client |
+| `CORS_ORIGIN_REGEX` | `"https?://.*(clientmanger\\.tech\|github\\.io\|vercel\\.app\|onrender\\.com)"` | Allowed CORS origin regex pattern for preview subdomains |
 | `LOG_LEVEL` | `"INFO"` | Logging level (`DEBUG`, `INFO`, `WARNING`, `ERROR`) |
 | `LOG_FORMAT` | `"json"` | Log format (`json` or `console`) |
 
@@ -251,6 +252,8 @@ Below are the variables supported in `.env` (mirrored in `.env.example`):
 ├── README.md                      # Project Overview and Setup Guide
 ├── architecture.md                # System Architecture and DB Schema
 ├── design.md                      # UI/UX Design System Specifications
+├── Dockerfile                     # Root multi-stage container build definition
+├── render.yaml                    # Render Blueprint configuration
 ├── docker-compose.yml             # Containerized multi-service deployment
 ├── backend/                       # FastAPI async backend
 │   ├── app/
