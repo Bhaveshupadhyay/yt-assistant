@@ -19,12 +19,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Install dependencies into virtual environment
-COPY pyproject.toml ./
-RUN uv sync --frozen --no-dev --no-install-project
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --no-dev --no-install-project
 
 # Copy application source and complete sync
 COPY . .
-RUN uv sync --frozen --no-dev
+RUN uv sync --no-dev
 
 
 # Stage 2: Minimal production runtime image
