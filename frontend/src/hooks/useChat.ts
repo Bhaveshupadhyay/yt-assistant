@@ -62,11 +62,11 @@ export function useChat(
           activeModel,
           skill,
           {
-            onStatus: (statusData) => {
+            onStatus: (statusData: { stage: string; message: string }) => {
               setStatusStage(statusData.stage);
               setStatusMessage(statusData.message);
             },
-            onToken: (delta) => {
+            onToken: (delta: string) => {
               accumulatedContent += delta;
               setMessages(prev =>
                 prev.map(m =>
@@ -76,7 +76,7 @@ export function useChat(
                 )
               );
             },
-            onCitations: (citations) => {
+            onCitations: (citations: Citation[]) => {
               accumulatedCitations = citations;
               setMessages(prev =>
                 prev.map(m =>
@@ -86,7 +86,7 @@ export function useChat(
                 )
               );
             },
-            onArtifact: (artifact) => {
+            onArtifact: (artifact: Artifact) => {
               latestArtifact = artifact;
               setMessages(prev =>
                 prev.map(m =>
@@ -97,7 +97,7 @@ export function useChat(
               );
               onArtifactGenerated?.(artifact);
             },
-            onDone: (_donePayload) => {
+            onDone: (_donePayload?: any) => {
               const finalContent = _donePayload?.content || accumulatedContent;
               setMessages(prev =>
                 prev.map(m =>
@@ -117,7 +117,7 @@ export function useChat(
               setStatusMessage(null);
               setStatusStage(null);
             },
-            onError: (errPayload) => {
+            onError: (errPayload: { error: string; code?: string }) => {
               setError(errPayload.error);
               setIsStreaming(false);
               setStatusMessage(null);
