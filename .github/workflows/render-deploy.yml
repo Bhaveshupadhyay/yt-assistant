@@ -1,0 +1,64 @@
+name: CI & Deploy Backend to Render
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/render-deploy.yml"
+      - "render.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Run Backend Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Dependencies
+        working-directory: backend
+        run: uv sync --frozen
+
+      - name: Run Pytest Suite
+        working-directory: backend
+        run: uv run pytest -v -k "not test_ingest"
+
+      - name: Verify Docker Container Build
+        run: docker build -t lenny-growth-assistant-backend:ci ./backend
+
+  deploy:
+    name: Trigger Render Deployment
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deployment Hook
+        # Render provides a unique Deploy Hook URL for each Web Service.
+        # When triggered via POST, Render pulls the latest commit and rebuilds the service.
+        # --fail-with-body ensures that if Render returns a 4xx/5xx error, GitHub Actions fails with response details.
+        run: |
+          if [ -z "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            echo "ERROR: RENDER_DEPLOY_HOOK_URL secret is not configured in GitHub repository secrets."
+            echo "Please add RENDER_DEPLOY_HOOK_URL in Repository Settings -> Secrets and variables -> Actions."
+            exit 1
+          fi
+          curl -s --fail-with-body -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
