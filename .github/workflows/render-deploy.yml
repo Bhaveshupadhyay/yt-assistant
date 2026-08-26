@@ -8,6 +8,17 @@ on:
       - "backend/**"
       - ".github/workflows/render-deploy.yml"
       - "render.yaml"
+      - "Dockerfile"
+      - ".dockerignore"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/render-deploy.yml"
+      - "render.yaml"
+      - "Dockerfile"
+      - ".dockerignore"
   workflow_dispatch:
 
 permissions:
@@ -41,13 +52,16 @@ jobs:
         working-directory: backend
         run: uv run pytest -v -k "not test_ingest"
 
-      - name: Verify Docker Container Build
+      - name: Verify Root Docker Container Build
+        run: docker build -t lenny-growth-assistant-backend:root-ci .
+
+      - name: Verify Backend Docker Container Build
         run: docker build -t lenny-growth-assistant-backend:ci ./backend
 
   deploy:
     name: Trigger Render Deployment
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:

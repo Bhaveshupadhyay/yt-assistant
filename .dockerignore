@@ -1,0 +1,66 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.iml
+
+# Node / Frontend artifacts
+node_modules/
+frontend/node_modules/
+frontend/dist/
+
+# Local databases and vector store storage
+data/qdrant_storage/
+*.db
+*.sqlite
+*.sqlite3
+lenny_assistant.db
+backend/lenny_assistant.db
+
+# Documentation / Graphify / Logs
+graphify-out/
+.agents/
+*.log
