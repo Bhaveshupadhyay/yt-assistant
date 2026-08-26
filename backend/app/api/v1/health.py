@@ -8,8 +8,9 @@ from app.services.health_service import HealthService
 router = APIRouter(tags=["Health"])
 
 
-@router.get(
+@router.api_route(
     "/health",
+    methods=["GET", "HEAD"],
     response_model=HealthResponse,
     status_code=status.HTTP_200_OK,
     summary="System health and dependency liveness",
@@ -17,5 +18,5 @@ router = APIRouter(tags=["Health"])
 async def check_health(
     health_service: HealthService = Depends(get_health_service),
 ) -> HealthResponse:
-    """Check database connection and Ollama daemon accessibility."""
+    """Check database connection and Ollama daemon accessibility (supports GET and HEAD probes)."""
     return await health_service.check_health()

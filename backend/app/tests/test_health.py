@@ -57,3 +57,22 @@ async def test_health_endpoint_database_failure(async_client: AsyncClient):
             data = response.json()
             assert data["database"] is False
             assert data["status"] == HealthStatus.DEGRADED.value
+
+
+@pytest.mark.asyncio
+async def test_health_endpoint_head_request(async_client: AsyncClient):
+    """Verify HEAD /health and HEAD /api/v1/health return 200 OK without body for uptime monitors."""
+    with patch("app.services.health_service.get_ollama_client") as mock_ollama_factory:
+        mock_client = AsyncMock()
+        mock_client.get.return_value = httpx.Response(200, json={"models": []})
+        mock_ollama_factory.return_value = mock_client
+
+        # Test root /health HEAD
+        root_head_resp = await async_client.head("/health")
+        assert root_head_resp.status_code == 200
+        assert root_head_resp.content == b""
+
+        # Test /api/v1/health HEAD
+        v1_head_resp = await async_client.head("/api/v1/health")
+        assert v1_head_resp.status_code == 200
+        assert v1_head_resp.content == b""
