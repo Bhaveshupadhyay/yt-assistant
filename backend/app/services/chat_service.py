@@ -9,6 +9,7 @@ from typing import Any
 from fastapi import status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
+from app.core.database import async_session_factory
 from app.core.enums import ArtifactType, MessageRole, ModelProvider
 from app.core.exceptions import (
     AppException,
@@ -53,26 +54,30 @@ class ChatService:
 
     def __init__(
         self,
-        db: AsyncSession,
-        session_repo: SessionRepository,
-        message_repo: MessageRepository,
-        artifact_repo: ArtifactRepository,
-        rag_service: RAGService,
-        ship30_service: Ship30Service,
-        artifact_service: ArtifactService,
+        db: AsyncSession | None = None,
+        session_repo: SessionRepository | None = None,
+        message_repo: MessageRepository | None = None,
+        artifact_repo: ArtifactRepository | None = None,
+        rag_service: RAGService | None = None,
+        ship30_service: Ship30Service | None = None,
+        artifact_service: ArtifactService | None = None,
         settings: Settings | None = None,
+        session_factory: Any = None,
     ) -> None:
         """Initialize ChatService with required repositories and services."""
         self.db = db
         self.session_repo = session_repo
         self.message_repo = message_repo
         self.artifact_repo = artifact_repo
-        self.rag_service = rag_service
-        self.ship30_service = ship30_service
-        self.artifact_service = artifact_service
+        self.rag_service = rag_service or RAGService(settings=settings)
+        self.ship30_service = ship30_service or Ship30Service(rag_service=self.rag_service)
+        self.artifact_service = artifact_service or ArtifactService()
         self.settings = settings or get_settings()
+        self.session_factory = session_factory or async_session_factory
 
-    async def validate_preflight(self, payload: ChatRequest) -> tuple[Any, str, ModelProvider]:
+    async def validate_preflight(
+        self, payload: ChatRequest, db_session: AsyncSession | None = None
+    ) -> tuple[Any, str, ModelProvider]:
         """Perform preflight checks on session existence and provider availability.
 
         Returns:
@@ -82,7 +87,18 @@ class ChatService:
             SessionNotFoundException: If the session ID does not exist.
             OllamaUnavailableException: If Ollama provider is selected but unreachable.
         """
-        session = await self.session_repo.get_by_id(payload.session_id)
+        # 1. Check session existence
+        session = None
+        if db_session:
+            repo = SessionRepository(session=db_session)
+            session = await repo.get_by_id(payload.session_id)
+        elif self.session_repo:
+            session = await self.session_repo.get_by_id(payload.session_id)
+        else:
+            async with self.session_factory() as session_db:
+                repo = SessionRepository(session=session_db)
+                session = await repo.get_by_id(payload.session_id)
+
         if not session:
             raise SessionNotFoundException(session_id=payload.session_id)
 
@@ -96,7 +112,7 @@ class ChatService:
                 raise OllamaUnavailableException(
                     message=(
                         f"Ollama daemon is unreachable on {self.settings.OLLAMA_BASE_URL}. "
-                        "Ensure Ollama is running (`ollama serve`) or toggle to a Cloud provider (Claude/OpenAI)."
+                        "Ensure Ollama is running (`ollama serve`) or toggle to a Cloud provider (Claude/OpenAI/Gemini)."
                     )
                 )
 
@@ -111,6 +127,23 @@ class ChatService:
         session, target_model, provider = await self.validate_preflight(payload)
         llm_client = get_llm_client(model_name=target_model, settings=self.settings)
 
+        # In testing/direct invocation where an open db session is already provided, reuse it;
+        # otherwise open a dedicated streaming session from the session factory.
+        use_direct_session = self.db is not None and getattr(self.db, "is_active", False)
+
+        if use_direct_session and self.db is not None:
+            db = self.db
+            session_repo = self.session_repo or SessionRepository(session=db)
+            message_repo = self.message_repo or MessageRepository(session=db)
+            artifact_repo = self.artifact_repo or ArtifactRepository(session=db)
+            db_cm = None
+        else:
+            db_cm = self.session_factory()
+            db = await db_cm.__aenter__()
+            session_repo = SessionRepository(session=db)
+            message_repo = MessageRepository(session=db)
+            artifact_repo = ArtifactRepository(session=db)
+
         start_time = time.perf_counter()
         token_count = 0
         chunks: list[dict[str, Any]] = []
@@ -119,7 +152,7 @@ class ChatService:
 
         try:
             # 1. Register user message in current session transaction
-            user_msg = await self.message_repo.create(
+            user_msg = await message_repo.create(
                 session_id=payload.session_id,
                 role=MessageRole.USER,
                 content=payload.message,
@@ -127,7 +160,7 @@ class ChatService:
 
             # Update session model if explicitly changed
             if payload.model and payload.model != session.model_used:
-                await self.session_repo.update(session_id=payload.session_id, model_used=payload.model)
+                await session_repo.update(session_id=payload.session_id, model_used=payload.model)
 
             # Check if specialized skill or conversational intent requested
             is_ship30 = payload.skill == "ship30" or (
@@ -165,7 +198,7 @@ class ChatService:
                 )
 
             # Fetch recent conversation context chronologically (excluding current prompt)
-            prior_messages = await self.message_repo.get_recent_history(
+            prior_messages = await message_repo.get_recent_history(
                 session_id=payload.session_id,
                 limit=20,
                 exclude_id=user_msg.id,
@@ -249,7 +282,7 @@ class ChatService:
                 yield format_sse("citations", citations_data)
 
             # ─── Stage 4: Persist Assistant Message & Artifacts ───────────────
-            assistant_msg = await self.message_repo.create(
+            assistant_msg = await message_repo.create(
                 session_id=payload.session_id,
                 role=MessageRole.ASSISTANT,
                 content=clean_text.strip(),
@@ -260,7 +293,7 @@ class ChatService:
             # Persist artifacts to database first
             persisted_artifact_payloads = []
             for art in extracted_artifacts:
-                persisted_artifact = await self.artifact_repo.create(
+                persisted_artifact = await artifact_repo.create(
                     session_id=payload.session_id,
                     artifact_type=art.artifact_type,
                     title=art.title,
@@ -279,7 +312,7 @@ class ChatService:
                 )
 
             # Commit the atomic conversational turn (user prompt + assistant response + artifacts)
-            await self.db.commit()
+            await db.commit()
 
             # Emit artifact SSE events after successful commit
             for art_payload in persisted_artifact_payloads:
@@ -322,7 +355,7 @@ class ChatService:
             )
 
         except OllamaUnavailableException as exc:
-            await self.db.rollback()
+            await db.rollback()
             logger.warning(f"Ollama unavailable during stream: {exc}")
             yield format_sse(
                 "error",
@@ -333,7 +366,7 @@ class ChatService:
                 ),
             )
         except AppException as exc:
-            await self.db.rollback()
+            await db.rollback()
             logger.error(f"Application error during stream: {exc}")
             yield format_sse(
                 "error",
@@ -344,7 +377,7 @@ class ChatService:
                 ),
             )
         except Exception as exc:
-            await self.db.rollback()
+            await db.rollback()
             logger.exception(f"Unexpected streaming exception: {exc}")
             yield format_sse(
                 "error",
@@ -354,3 +387,6 @@ class ChatService:
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 ),
             )
+        finally:
+            if db_cm is not None:
+                await db_cm.__aexit__(None, None, None)

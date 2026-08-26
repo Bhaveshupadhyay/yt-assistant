@@ -37,6 +37,18 @@ class SessionRepository(BaseRepository[ChatSession]):
         """Retrieve a session by its UUID."""
         return await self.session.get(ChatSession, session_id)
 
+    async def get_or_create(
+        self,
+        session_id: uuid.UUID,
+        title: str = "New Conversation",
+        model_used: str | ModelName = ModelName.GEMINI_3_6_FLASH,
+    ) -> ChatSession:
+        """Retrieve existing session or automatically create a new one with given session_id."""
+        existing = await self.get_by_id(session_id)
+        if existing:
+            return existing
+        return await self.create(title=title, model_used=model_used, session_id=session_id)
+
     async def list_recent(self, limit: int = 50, offset: int = 0) -> Sequence[ChatSession]:
         """List sessions ordered by updated_at descending."""
         stmt = (
